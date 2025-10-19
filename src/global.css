@@ -1,0 +1,142 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Tailwind CSS theme - Dark cybersecurity dashboard theme
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+  */
+  :root {
+    /* Light theme (fallback) */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 240 6% 12%;
+    --sidebar-foreground: 240 5% 84%;
+    --sidebar-primary: 263 84% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 240 5% 84%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 263 84% 58%;
+  }
+
+  /* Dark theme is default for this cybersecurity dashboard */
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    --sidebar-background: 240 6% 12%;
+    --sidebar-foreground: 240 5% 84%;
+    --sidebar-primary: 263 84% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 240 5% 84%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 263 84% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-slate-900 text-white font-sans;
+    font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism utilities */
+  .glass {
+    @apply bg-slate-800/60 backdrop-blur-sm border border-slate-700/50;
+  }
+
+  .glass-strong {
+    @apply bg-slate-800/80 backdrop-blur-md border border-slate-700/50;
+  }
+
+  /* Custom gradient utilities */
+  .gradient-primary {
+    background: linear-gradient(90deg, #9333ea 0%, #db2777 100%);
+  }
+
+  .gradient-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(51, 65, 85, 0.4) 100%);
+  }
+}

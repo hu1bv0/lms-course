@@ -1,0 +1,46 @@
+@keyframes rotate-border {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 400% 0;
+  }
+}
+
+.animated-border {
+  position: relative;
+  z-index: 0;
+}
+
+.animated-border::before {
+  content: "";
+  position: absolute;
+  inset: -3px; /* dày viền */
+  z-index: -1;
+  background: linear-gradient(
+  90deg,
+  #1e3a8a, /* blue-900 */
+  #2563eb, /* blue-600 */
+  #ffffff, /* white */
+  #2563eb, /* blue-600 */
+  #1e3a8a  /* blue-900 */
+);
+  background-size: 400% 400%;
+  animation: rotate-border 3s linear infinite;
+  border-radius: 0.5rem;
+
+  /* Masking để chỉ hiện viền */
+  padding: 3px;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+}
