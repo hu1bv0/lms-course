@@ -38,7 +38,7 @@ const RequiredPermission = ({ children, path, requiredPrivileges = [] }) => {
   if (!checked) return null; // Chờ kiểm tra xong mới render children
 
   if (!hasAccess) {
-    return <Navigate to={ENDPOINTS.USER.DASHBOARD} replace />;
+    return <Navigate to={ENDPOINTS.STUDENT.DASHBOARD} replace />;
   }
 
   return children;

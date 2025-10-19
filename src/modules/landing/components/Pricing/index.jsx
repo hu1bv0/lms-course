@@ -1,10 +1,32 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../hooks/useAuth";
+import { ENDPOINTS } from "../../../../routes/endPoints";
+import { SUBSCRIPTION_PLANS, formatPrice } from "../../../../constants/pricingConstants";
 
 export default function Pricing() {
   const [billing, setBilling] = useState("monthly"); // monthly | yearly
-  const [selectedPlan, setSelectedPlan] = useState("premium"); // free | premium | school
+  const [selectedPlan, setSelectedPlan] = useState("premium"); // free | premium
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handlePlanClick = (planKey) => {
+    if (planKey === "free") {
+      // Free plan - redirect to login if not authenticated
+      if (!isAuthenticated) {
+        navigate(ENDPOINTS.AUTH.LOGIN);
+      } else {
+        navigate(ENDPOINTS.STUDENT.DASHBOARD);
+      }
+    } else if (planKey === "premium") {
+      // Premium plan - redirect to login or payment
+      if (!isAuthenticated) {
+        navigate(ENDPOINTS.AUTH.LOGIN);
+      } else {
+        navigate(ENDPOINTS.SHARED.PAYMENT);
+      }
+    }
+  };
   const plans = {
     monthly: {
       free: {
@@ -22,7 +44,7 @@ export default function Pricing() {
       },
       premium: {
         name: "Gói Premium",
-        price: "69.000 VND/tháng",
+        price: SUBSCRIPTION_PLANS.MONTHLY.displayPrice,
         desc: "Lựa chọn phổ biến nhất",
         features: [
           "Tất cả tính năng gói Miễn phí",
@@ -33,20 +55,6 @@ export default function Pricing() {
           "Hỗ trợ ưu tiên 24/7",
         ],
         button: "Chọn Premium",
-      },
-      school: {
-        name: "Gói Trường học",
-        price: "990.000 VND/tháng",
-        desc: "Cho các cơ sở giáo dục",
-        features: [
-          "Tất cả các tính năng Premium",
-          "Quản lý nhiều tài khoản",
-          "Báo cáo tiến độ chi tiết",
-          "API tích hợp",
-          "Đào tạo và hỗ trợ chuyên biệt",
-          "Tùy chỉnh theo yêu cầu",
-        ],
-        button: "Liên hệ Tư vấn",
       },
     },
     yearly: {
@@ -65,8 +73,8 @@ export default function Pricing() {
       },
       premium: {
         name: "Gói Premium",
-        price: "690.000 VND/năm",
-        desc: "Tiết kiệm 17%",
+        price: SUBSCRIPTION_PLANS.YEARLY.displayPrice,
+        desc: `Tiết kiệm ${SUBSCRIPTION_PLANS.YEARLY.savingsPercentage}%`,
         features: [
           "Tất cả tính năng gói Miễn phí",
           "Truy cập AI nâng cao không giới hạn",
@@ -76,20 +84,6 @@ export default function Pricing() {
           "Hỗ trợ ưu tiên 24/7",
         ],
         button: "Chọn Premium",
-      },
-      school: {
-        name: "Gói Trường học",
-        price: "9.900.000 VND/năm",
-        desc: "Tiết kiệm 17%",
-        features: [
-          "Tất cả các tính năng Premium",
-          "Quản lý nhiều tài khoản",
-          "Báo cáo tiến độ chi tiết",
-          "API tích hợp",
-          "Đào tạo và hỗ trợ chuyên biệt",
-          "Tùy chỉnh theo yêu cầu",
-        ],
-        button: "Liên hệ Tư vấn",
       },
     },
   };
@@ -130,14 +124,14 @@ export default function Pricing() {
             Hàng năm
             {billing === "yearly" && (
               <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-green-100 text-green-600 text-xs font-medium px-2 py-0.5 rounded-full">
-                Tiết kiệm 17%
+                Tiết kiệm {SUBSCRIPTION_PLANS.YEARLY.savingsPercentage}%
               </span>
             )}
           </button>
         </div>
 
         {/* Plans */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {Object.entries(plans[billing]).map(([key, plan]) => (
             <div
               key={key}
@@ -175,7 +169,7 @@ export default function Pricing() {
               </ul>
 
               {/* Button */}
-              <button onClick={() => navigate("/checkout")}
+              <button onClick={() => handlePlanClick(key)}
                 className={`w-full py-2 rounded-lg font-medium transition ${
                   key === "premium"
                     ? "bg-blue-600 text-white hover:bg-blue-700"

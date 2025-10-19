@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 const NewPasswordForm = ({ onSubmit }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState([]);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // Quy định mật khẩu
@@ -24,16 +24,21 @@ const NewPasswordForm = ({ onSubmit }) => {
     e.preventDefault();
 
     if (!isPasswordValid) {
-      setErrors(["Password does not meet all requirements."]);
+      toast.error("Mật khẩu không đáp ứng đủ yêu cầu", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrors(["Passwords do not match."]);
+      toast.error("Mật khẩu xác nhận không khớp", {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
-    setErrors([]);
     onSubmit({ newPassword });
   };
 
@@ -183,13 +188,6 @@ const NewPasswordForm = ({ onSubmit }) => {
         </div>
       </div>
 
-      {errors.length > 0 && (
-        <div className="text-red-600 text-sm font-semibold">
-          {errors.map((error, i) => (
-            <div key={i}>{error}</div>
-          ))}
-        </div>
-      )}
 
       <button
         type="submit"

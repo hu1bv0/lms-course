@@ -247,7 +247,7 @@ export default function ListNotification({ userId }) {
               {!item.read && (
                 <a
                   className="border rounded-md px-3 py-1 text-xs font-medium hover:bg-gray-100"
-                  href={ENDPOINTS.USER.TESTORDER_DETAIL(testOrderId)}
+                  href="#"
                   onClick={() => handleMarkAsRead(item.id)}
                 >
                   View

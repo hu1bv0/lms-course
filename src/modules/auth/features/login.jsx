@@ -105,7 +105,7 @@
 //   );
 // }
 import robot from "../../../assets/images/robot.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { ENDPOINTS } from "../../../routes/endPoints";
@@ -113,8 +113,13 @@ import { GraduationCapIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import "../styles/animated-border.css";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
+import { useAuth } from "../../../hooks/useAuth";
+import { USER_ROLES } from "../../../services/firebase";
+
 const Login = () => {
   const navigate = useNavigate();
+  const { login, loginWithGoogle, loginWithFacebook, isLoading, error, isAuthenticated, userData } = useAuth();
+  
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -122,50 +127,133 @@ const Login = () => {
     username: "",
     password: "",
   });
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && userData) {
+      const userRole = userData.role;
+      if (userRole === USER_ROLES.ADMIN) {
+        navigate(ENDPOINTS.ADMIN.DASHBOARD, { replace: true });
+      } else if (userRole === USER_ROLES.PARENT) {
+        navigate(ENDPOINTS.PARENT.DASHBOARD, { replace: true });
+      } else {
+        navigate(ENDPOINTS.STUDENT.DASHBOARD, { replace: true });
+      }
+    }
+  }, [isAuthenticated, userData, navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setFieldErrors({ username: "", password: "" });
+    
     if (!username.trim() || !password.trim()) {
-      toast.error("Please enter your full username and password!", {
+      toast.error("Vui lòng nhập đầy đủ email và mật khẩu!", {
         position: "top-right",
         autoClose: 3000,
       });
       return;
     }
-    if (
-      (username.trim().toLowerCase() === "administator" ||
-        username.trim().toLowerCase() === "admin") &&
-      password === "123456"
-    ) {
-      toast.success("Welcome, Admin!", {
+
+    try {
+      const result = await login(username, password);
+      if (result.success) {
+        toast.success("Đăng nhập thành công!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        
+        // Redirect based on user role
+        const userRole = result.userData?.role;
+        if (userRole === USER_ROLES.ADMIN) {
+          navigate(ENDPOINTS.ADMIN.DASHBOARD);
+        } else if (userRole === USER_ROLES.PARENT) {
+          navigate(ENDPOINTS.PARENT.DASHBOARD);
+        } else {
+          navigate(ENDPOINTS.STUDENT.DASHBOARD);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message || "Đăng nhập thất bại!", {
         position: "top-right",
-        autoClose: 2000,
+        autoClose: 3000,
       });
-      navigate(ENDPOINTS.ADMIN.DASHBOARD);
-      return;
     }
-    navigate(ENDPOINTS.USER.COURSES);
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await loginWithGoogle();
+      if (result.success) {
+        toast.success("Đăng nhập với Google thành công!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        // Redirect based on user role
+        const userRole = result.userData?.role;
+        if (userRole === USER_ROLES.ADMIN) {
+          navigate(ENDPOINTS.ADMIN.DASHBOARD);
+        } else if (userRole === USER_ROLES.PARENT) {
+          navigate(ENDPOINTS.PARENT.DASHBOARD);
+        } else {
+          navigate(ENDPOINTS.STUDENT.DASHBOARD);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message || "Đăng nhập với Google thất bại!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      const result = await loginWithFacebook();
+      if (result.success) {
+        toast.success("Đăng nhập với Facebook thành công!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        // Redirect based on user role
+        const userRole = result.userData?.role;
+        if (userRole === USER_ROLES.ADMIN) {
+          navigate(ENDPOINTS.ADMIN.DASHBOARD);
+        } else if (userRole === USER_ROLES.PARENT) {
+          navigate(ENDPOINTS.PARENT.DASHBOARD);
+        } else {
+          navigate(ENDPOINTS.STUDENT.DASHBOARD);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message || "Đăng nhập với Facebook thất bại!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
   };
 
   return (
     <div className="flex h-screen w-full">
       {/* Left - Login Form */}
-      <div className="w-1/2 bg-white flex flex-col items-center justify-center px-12 relative">
-        {/* Logo + Welcome */}
-        <div className="absolute top-10 left-1/2 flex items-center gap-4">
-          <Link to={ENDPOINTS.INDEX}>
-            <GraduationCapIcon className="text-blue-600 text-5xl w-[70px] h-[70px] absolute top-[-30px] left-10 z-20" />
-          </Link>
-          <div className="bg-white w-[900px] ml-[60px] bg-opacity-80 backdrop-blur-md rounded-[15px] px-6 py-2 shadow-md text-[28px] font-bold text-blue-600 text-center z-10">
-            Chào mừng đến với Learnly
+      <div className="w-1/2 bg-white flex flex-col px-12 relative overflow-y-auto">
+        {/* Logo + Welcome - Fixed positioning */}
+        <div className="sticky top-0 bg-white z-50 py-6 border-b border-gray-100">
+          <div className="flex items-center justify-center gap-4">
+            <Link to={ENDPOINTS.INDEX}>
+              <GraduationCapIcon className="text-blue-600 text-4xl w-[50px] h-[50px]" />
+            </Link>
+            <h1 className="text-2xl font-bold text-blue-600 text-center">
+              Chào mừng đến với Learnly
+            </h1>
           </div>
         </div>
 
-        {/* Form */}
-        <form
-          onSubmit={handleLogin}
-          className="w-full max-w-[400px] animated-border bg-white rounded-lg p-6 shadow-md"
-        >
+        {/* Form Container */}
+        <div className="flex-1 flex items-center justify-center py-8">
+          <form
+            onSubmit={handleLogin}
+            className="w-full max-w-[400px] animated-border bg-white rounded-lg p-6 shadow-md"
+          >
           <h2 className="text-blue-600 text-3xl font-bold mb-2 text-center">
             Login
           </h2>
@@ -289,9 +377,10 @@ const Login = () => {
           {/* Submit button */}
           <button
             type="submit"
+            disabled={isLoading}
             className="w-full py-3 bg-[#1d4ed8] text-white font-bold rounded-[10px] shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Đăng nhập{" "}
+            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
 
           <div className="flex items-center gap-2">
@@ -300,14 +389,22 @@ const Login = () => {
 
           {/* Social Buttons */}
           <div className="flex flex-col gap-3 mt-4">
-            <button className="w-full border rounded-[10px] py-2 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+            <button 
+              onClick={handleFacebookLogin}
+              disabled={isLoading}
+              className="w-full border rounded-[10px] py-2 flex items-center justify-center gap-3 hover:bg-gray-50 transition disabled:opacity-70 disabled:cursor-not-allowed"
+            >
               <FaFacebook className="text-blue-600 text-xl" />
               <span className="font-medium text-gray-700">
                 Đăng nhập với Facebook
               </span>
             </button>
 
-            <button className="w-full border rounded-[10px] py-2 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full border rounded-[10px] py-2 flex items-center justify-center gap-3 hover:bg-gray-50 transition disabled:opacity-70 disabled:cursor-not-allowed"
+            >
               <FaGoogle className="text-red-500 text-xl" />
               <span className="font-medium text-gray-700">
                 Đăng nhập với Google
@@ -326,6 +423,7 @@ const Login = () => {
             </Link>
           </p>
         </form>
+        </div>
       </div>
 
       {/* Right - Background */}
