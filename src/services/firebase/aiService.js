@@ -412,8 +412,8 @@ class AIService {
   async updateMessageCount(chatId, increment = 1) {
     try {
       // Lấy chat session hiện tại để có messageCount
-      const chatSession = await firestoreService.getDocument('chat_sessions', chatId);
-      const currentCount = chatSession?.messageCount || 0;
+      const chatSessionResult = await firestoreService.getDocument('chat_sessions', chatId);
+      const currentCount = chatSessionResult.success ? (chatSessionResult.data?.messageCount || 0) : 0;
       
       await firestoreService.updateDocument('chat_sessions', chatId, {
         messageCount: currentCount + increment,

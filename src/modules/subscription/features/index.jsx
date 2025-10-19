@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ENDPOINTS } from "../../../routes/endPoints";
-import { GraduationCapIcon as GraduationCap, Check, Star, Crown } from "lucide-react";
+import { GraduationCapIcon as GraduationCap, Check, Star, Crown, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../hooks/useAuth";
 import { SUBSCRIPTION_TYPES } from "../../../services/firebase";
 import { legacyAuthService as authService } from "../../../services/firebase";
+import { SUBSCRIPTION_PLANS, formatPrice, calculateYearlySavings } from "../../../constants/pricingConstants";
 
 const SubscriptionManagement = () => {
   const navigate = useNavigate();
   const { userData, subscriptionType, updateSubscription } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  const yearlySavings = calculateYearlySavings();
 
   const subscriptionPlans = [
     {
@@ -36,10 +39,10 @@ const SubscriptionManagement = () => {
       buttonDisabled: true
     },
     {
-      id: SUBSCRIPTION_TYPES.PREMIUM,
+      id: "premium-monthly",
       name: "Gói Premium",
-      price: 199000,
-      period: "tháng",
+      price: SUBSCRIPTION_PLANS.MONTHLY.price,
+      period: SUBSCRIPTION_PLANS.MONTHLY.period,
       description: "Dành cho học sinh muốn học tập hiệu quả",
       features: [
         "Truy cập tất cả khóa học",
@@ -52,14 +55,38 @@ const SubscriptionManagement = () => {
         "Lộ trình học tập cá nhân hóa"
       ],
       limitations: [],
+      popular: false,
+      buttonText: subscriptionType === SUBSCRIPTION_TYPES.PREMIUM ? "Đang sử dụng" : "Nâng cấp ngay",
+      buttonDisabled: subscriptionType === SUBSCRIPTION_TYPES.PREMIUM
+    },
+    {
+      id: "premium-yearly",
+      name: "Gói Premium",
+      price: SUBSCRIPTION_PLANS.YEARLY.price,
+      period: SUBSCRIPTION_PLANS.YEARLY.period,
+      description: "Tiết kiệm chi phí với gói năm",
+      features: [
+        "Truy cập tất cả khóa học",
+        "Hỗ trợ AI chatbot không giới hạn",
+        "Báo cáo tiến độ chi tiết",
+        "Hỗ trợ ưu tiên 24/7",
+        "Tài liệu học tập nâng cao",
+        "Luyện thi chuyên sâu",
+        "Phân tích điểm mạnh/yếu",
+        "Lộ trình học tập cá nhân hóa",
+        `Tiết kiệm ${yearlySavings.percentage}% so với gói tháng`
+      ],
+      limitations: [],
       popular: true,
+      savings: yearlySavings.amount,
+      savingsPercentage: yearlySavings.percentage,
       buttonText: subscriptionType === SUBSCRIPTION_TYPES.PREMIUM ? "Đang sử dụng" : "Nâng cấp ngay",
       buttonDisabled: subscriptionType === SUBSCRIPTION_TYPES.PREMIUM
     }
   ];
 
   const handleUpgrade = async (planId) => {
-    if (planId === SUBSCRIPTION_TYPES.PREMIUM) {
+    if (planId === "premium-monthly" || planId === "premium-yearly") {
       // Redirect to payment page instead of upgrading directly
       navigate(ENDPOINTS.SHARED.PAYMENT);
     }
@@ -86,8 +113,9 @@ const SubscriptionManagement = () => {
             </div>
             <button
               onClick={() => navigate(ENDPOINTS.STUDENT.DASHBOARD)}
-              className="text-blue-600 hover:text-blue-800 font-medium"
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
             >
+              <ArrowLeft className="w-4 h-4" />
               Quay lại Dashboard
             </button>
           </div>
@@ -113,7 +141,7 @@ const SubscriptionManagement = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {subscriptionPlans.map((plan) => (
             <div
               key={plan.id}
@@ -133,7 +161,15 @@ const SubscriptionManagement = () => {
 
               {/* Plan Header */}
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {plan.name}
+                  {plan.id === "premium-yearly" && (
+                    <span className="text-sm font-normal text-gray-500 ml-2">(Hàng năm)</span>
+                  )}
+                  {plan.id === "premium-monthly" && (
+                    <span className="text-sm font-normal text-gray-500 ml-2">(Hàng tháng)</span>
+                  )}
+                </h3>
                 <p className="text-gray-600 mb-4">{plan.description}</p>
                 <div className="mb-4">
                   <span className="text-4xl font-bold text-gray-900">
@@ -143,6 +179,14 @@ const SubscriptionManagement = () => {
                     <span className="text-gray-600">/{plan.period}</span>
                   )}
                 </div>
+                
+                {/* Savings Badge for Yearly Plan */}
+                {plan.savings && plan.savings > 0 && (
+                  <div className="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    <span>💰</span>
+                    Tiết kiệm {formatPrice(plan.savings)} ({plan.savingsPercentage}%)
+                  </div>
+                )}
               </div>
 
               {/* Features */}

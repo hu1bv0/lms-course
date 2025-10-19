@@ -58,11 +58,13 @@ class CourseService {
   // Lấy khóa học theo ID
   async getCourseById(courseId) {
     try {
-      const course = await this.firestore.getDocument('courses', courseId);
+      const courseResult = await this.firestore.getDocument('courses', courseId);
       
-      if (!course) {
+      if (!courseResult.success) {
         throw new Error('Course not found');
       }
+      
+      const course = courseResult.data;
 
       return {
         success: true,
@@ -602,14 +604,14 @@ class CourseService {
   async enrollCourse(studentId, courseId) {
     try {
       // Kiểm tra khóa học có tồn tại không
-      const course = await this.firestore.getDocument('courses', courseId);
-      if (!course) {
+      const courseResult = await this.firestore.getDocument('courses', courseId);
+      if (!courseResult.success) {
         throw new Error('Course not found');
       }
 
       // Kiểm tra student đã đăng ký chưa
-      const enrollment = await this.firestore.getDocument('enrollments', `${studentId}_${courseId}`);
-      if (enrollment) {
+      const enrollmentResult = await this.firestore.getDocument('enrollments', `${studentId}_${courseId}`);
+      if (enrollmentResult.success) {
         return {
           success: false,
           message: 'Student already enrolled in this course'
@@ -664,8 +666,9 @@ class CourseService {
       const enrolledCourses = await Promise.all(
         studentEnrollments.map(async (enrollment) => {
           try {
-            const course = await this.firestore.getDocument('courses', enrollment.courseId);
-            if (course) {
+            const courseResult = await this.firestore.getDocument('courses', enrollment.courseId);
+            if (courseResult.success) {
+              const course = courseResult.data;
               console.log('Course enrollment data:', {
                 courseId: enrollment.courseId,
                 progress: enrollment.progress,

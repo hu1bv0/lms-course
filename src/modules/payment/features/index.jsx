@@ -18,8 +18,8 @@ const PaymentUpgrade = () => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // QR Code image - bạn có thể thay bằng QR code thật
-  const qrCodeImage = "https://via.placeholder.com/200x200/2563EB/FFFFFF?text=QR+CODE";
+  // QR Code image - sử dụng QR code thật từ public folder
+  const qrCodeImage = "/qr_payment.jpeg";
 
   const plans = {
     monthly: SUBSCRIPTION_PLANS.MONTHLY,
@@ -242,23 +242,36 @@ const PaymentUpgrade = () => {
               
               {/* QR Code Display */}
               <div className="text-center mb-6">
-                <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
+                <div className="inline-block p-6 bg-white border-2 border-gray-200 rounded-xl shadow-sm">
                   <img 
                     src={qrCodeImage} 
                     alt="QR Code thanh toán" 
-                    className="w-48 h-48 mx-auto"
+                    className="w-56 h-56 mx-auto rounded-lg"
                   />
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  Quét mã QR để thanh toán
-                </p>
+                <div className="mt-4 space-y-2">
+                  <p className="text-lg font-semibold text-gray-900">
+                    Quét mã QR để thanh toán
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Sử dụng ứng dụng ngân hàng để quét mã QR
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                    <p className="text-sm text-blue-800 font-medium">
+                      💡 Sau khi thanh toán thành công, hãy upload ảnh xác nhận bên dưới
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Upload Payment Proof */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload ảnh xác nhận thanh toán
+                  📸 Upload ảnh xác nhận thanh toán
                 </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Vui lòng upload ảnh chụp màn hình hoặc ảnh biên lai thanh toán
+                </p>
                 
                 {uploadedImage ? (
                   <div className="relative">
@@ -277,11 +290,11 @@ const PaymentUpgrade = () => {
                 ) : (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition"
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
                   >
                     <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium">Click to upload payment proof</p>
-                    <p className="text-sm text-gray-500">PNG, JPG up to 5MB</p>
+                    <p className="text-gray-600 font-medium">Click để upload ảnh xác nhận</p>
+                    <p className="text-sm text-gray-500">PNG, JPG tối đa 5MB</p>
                   </div>
                 )}
                 
@@ -297,9 +310,19 @@ const PaymentUpgrade = () => {
               <button
                 onClick={handleCompletePayment}
                 disabled={!uploadedImage || isLoading}
-                className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                {isLoading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu nâng cấp"}
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Đang gửi yêu cầu...
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <Check className="w-5 h-5" />
+                    Gửi yêu cầu nâng cấp
+                  </div>
+                )}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-3">

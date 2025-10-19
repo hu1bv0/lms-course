@@ -116,7 +116,7 @@ class FirestoreService {
    * Get document by ID
    * @param {string} collectionName - Collection name
    * @param {string} docId - Document ID
-   * @returns {Promise<Object|null>} - Document data or null
+   * @returns {Promise<Object>} - Document data with success flag
    */
   async getDocument(collectionName, docId) {
     try {
@@ -124,11 +124,25 @@ class FirestoreService {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return this.serializeData(docSnap.data());
+        return {
+          success: true,
+          data: this.serializeData(docSnap.data()),
+          id: docSnap.id
+        };
       }
-      return null;
+      return {
+        success: false,
+        data: null,
+        id: docId,
+        error: 'Document not found'
+      };
     } catch (error) {
-      throw this.handleError(error);
+      return {
+        success: false,
+        data: null,
+        id: docId,
+        error: this.handleError(error).message
+      };
     }
   }
 
