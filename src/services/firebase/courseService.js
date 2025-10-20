@@ -608,6 +608,7 @@ class CourseService {
       if (!courseResult.success) {
         throw new Error('Course not found');
       }
+      const course = courseResult.data;
 
       // Kiểm tra student đã đăng ký chưa
       const enrollmentResult = await this.firestore.getDocument('enrollments', `${studentId}_${courseId}`);
