@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import aiService from '../../../services/firebase/aiService';
 import { useAuth } from '../../../hooks/useAuth';
 import { ENDPOINTS } from '../../../routes/endPoints';
+import MarkdownMessage from '../../../components/MarkdownMessage';
 
 const ChatInterface = () => {
   const { userData } = useAuth();
@@ -460,7 +461,11 @@ const ChatInterface = () => {
                       : 'bg-white border border-gray-200'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  {message.role === 'assistant' ? (
+                    <MarkdownMessage content={message.content} />
+                  ) : (
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                  )}
                   <div className={`text-xs mt-2 ${
                     message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                   }`}>
