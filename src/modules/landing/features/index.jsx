@@ -21,6 +21,11 @@ import {
   GraduationCap,
   Trophy,
   Crown,
+  Gift,
+  Brain,
+  HeadsetIcon,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -110,36 +115,52 @@ export default function Landing() {
             <div className="flex justify-center gap-4 flex-wrap">
               <button
                 size="lg"
-                className="bg-blue-600 rounded-full shadow-md hover:bg-blue-700 px-8 py-3 text-white flex items-center text-lg font-medium"
+                className="bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl px-8 py-3 text-white flex items-center text-lg font-medium transition-all transform hover:scale-105"
                 onClick={() => navigate("/login")}
               >
-                Bắt đầu Học miễn phí →
+                <Sparkles className="w-5 h-5 mr-2" />
+                Bắt đầu Học miễn phí
+                <CheckCircle2 className="w-5 h-5 ml-2" />
               </button>
               <button
                 size="lg"
-                className="px-8 py-3 border-8 border-blue-600 rounded-full flex items-center text-lg font-medium"
+                className="px-8 py-3 border-4 border-blue-600 rounded-full flex items-center text-lg font-medium hover:bg-blue-50 transition-all"
                 onClick={() => document.getElementById('courses').scrollIntoView({ behavior: 'smooth' })}
               >
                 <Play className="w-5 h-5 mr-2" />
                 Xem Khóa học
               </button>
             </div>
-            <div className="flex justify-center items-center gap-8 mt-12 text-sm text-gray-500">
-              <span>
-                <strong className="text-blue-600 text-lg">100%</strong>{" "}
-                <br></br> Miễn phí bắt đầu
-              </span>
+            <div className="flex justify-center items-center gap-8 mt-12">
+              <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-lg">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Gift className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-blue-600">100%</div>
+                  <div className="text-sm text-gray-600">Miễn phí bắt đầu</div>
+                </div>
+              </div>
 
-              <span>
-                <strong className="text-green-600 text-lg">
-                  AI thông minh
-                </strong>{" "}
-                <br></br> Câu trả lời nhanh chóng, chính xác
-              </span>
-              <span>
-                <strong className="text-pink-600 text-lg">24/7</strong>{" "}
-                <br></br> Luôn sẵn sàng
-              </span>
+              <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-lg">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-green-600">AI</div>
+                  <div className="text-sm text-gray-600">Thông minh</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-lg">
+                <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+                  <HeadsetIcon className="w-6 h-6 text-pink-600" />
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-pink-600">24/7</div>
+                  <div className="text-sm text-gray-600">Luôn sẵn sàng</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -574,15 +595,24 @@ export default function Landing() {
           </p>
 
           <div className="grid grid-cols-3 gap-8 mb-10">
-            <div>
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3">
+                <Users className="w-8 h-8 text-white" />
+              </div>
               <div className="text-3xl font-bold mb-1">50K+</div>
               <div className="opacity-80">Học sinh tích cực</div>
             </div>
-            <div>
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3">
+                <Trophy className="w-8 h-8 text-white" />
+              </div>
               <div className="text-3xl font-bold mb-1">94%</div>
               <div className="opacity-80">Cải thiện điểm số</div>
             </div>
-            <div>
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3">
+                <Star className="w-8 h-8 text-white fill-white" />
+              </div>
               <div className="text-3xl font-bold mb-1">4.9/5</div>
               <div className="opacity-80">Đánh giá trung bình</div>
             </div>
@@ -591,11 +621,16 @@ export default function Landing() {
           <div className="flex justify-center gap-4">
             <button
               onClick={() => navigate("/login")}
-              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-full font-medium"
+              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-full font-medium flex items-center transition-all transform hover:scale-105 shadow-xl"
             >
+              <Sparkles className="w-5 h-5 mr-2" />
               Bắt đầu Miễn phí Ngay
             </button>
-            <button className="border border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 rounded-full font-medium">
+            <button 
+              onClick={() => document.getElementById('chatbot-demo').scrollIntoView({ behavior: 'smooth' })}
+              className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 rounded-full font-medium flex items-center transition-all"
+            >
+              <Play className="w-5 h-5 mr-2" />
               Xem Demo
             </button>
           </div>

@@ -25,6 +25,10 @@ export const ENDPOINTS = Object.freeze({
   // Parent Panel
   PARENT: {
     DASHBOARD: "/parent/dashboard",
+    COURSES: "/parent/courses",
+    COURSE_DETAIL: "/parent/course/:courseId",
+    PROGRESS: "/parent/progress",
+    ACHIEVEMENTS: "/parent/achievements",
     CHILDREN: "/parent/children",
     REPORTS: "/parent/reports",
     SETTINGS: "/parent/settings",
@@ -39,17 +43,6 @@ export const ENDPOINTS = Object.freeze({
     ACHIEVEMENTS: "/student/achievements",
     CHATBOT: "/student/chatbot",
     SETTINGS: "/student/settings",
-  },
-  
-  // Parent Features
-  PARENT: {
-    DASHBOARD: "/parent/dashboard",
-    COURSES: "/parent/courses",
-    COURSE_DETAIL: "/parent/course/:courseId",
-    PROGRESS: "/parent/progress",
-    ACHIEVEMENTS: "/parent/achievements",
-    CHILDREN: "/parent/children",
-    SETTINGS: "/parent/settings",
   },
   
   // Shared Features

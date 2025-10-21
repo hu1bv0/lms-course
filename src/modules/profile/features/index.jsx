@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { ENDPOINTS } from "../../../routes/endPoints";
 import { useAuth } from "../../../hooks/useAuth";
 import { USER_ROLES, SUBSCRIPTION_TYPES } from "../../../services/firebase";
+import parentService from "../../../services/firebase/parentService";
 import { toast } from "react-toastify";
 import { 
   User, 
@@ -17,7 +18,9 @@ import {
   ArrowLeft,
   Edit,
   Shield,
-  Star
+  Star,
+  UserPlus,
+  Users
 } from "lucide-react";
 
 const Profile = () => {
@@ -30,6 +33,9 @@ const Profile = () => {
     school: "",
     grade: ""
   });
+  const [studentCode, setStudentCode] = useState("");
+  const [linkingStudent, setLinkingStudent] = useState(false);
+  const [linkedStudents, setLinkedStudents] = useState([]);
 
   useEffect(() => {
     if (userData) {
@@ -39,8 +45,61 @@ const Profile = () => {
         school: userData.school || "",
         grade: userData.grade || ""
       });
+      
+      // Load linked students for parents
+      if (userData.role === USER_ROLES.PARENT) {
+        loadLinkedStudents();
+      }
     }
   }, [userData]);
+
+  const loadLinkedStudents = async () => {
+    try {
+      const result = await parentService.getParentChildren(userData.uid);
+      if (result.success) {
+        setLinkedStudents(result.children || []);
+      }
+    } catch (error) {
+      console.error('Error loading linked students:', error);
+    }
+  };
+
+  const handleLinkStudent = async () => {
+    if (!studentCode.trim()) {
+      toast.error("Vui lòng nhập mã học sinh!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      return;
+    }
+
+    try {
+      setLinkingStudent(true);
+      const result = await parentService.linkStudentToParent(userData.uid, studentCode.trim());
+      
+      if (result.success) {
+        toast.success("Liên kết học sinh thành công!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        setStudentCode("");
+        loadLinkedStudents(); // Reload danh sách
+      } else {
+        toast.error(result.message || "Không tìm thấy học sinh với mã này!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error linking student:', error);
+      toast.error("Có lỗi xảy ra khi liên kết học sinh!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLinkingStudent(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     try {
@@ -379,6 +438,85 @@ const Profile = () => {
                     </button>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Link Student - Only show for parents */}
+            {userData?.role === USER_ROLES.PARENT && (
+              <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Liên kết học sinh</h3>
+                
+                {/* Input form */}
+                <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <p className="text-sm text-gray-700 mb-3">
+                    Nhập mã học sinh (được cung cấp từ tài khoản học sinh) để liên kết và theo dõi tiến độ học tập
+                  </p>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={studentCode}
+                      onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+                      onKeyPress={(e) => e.key === 'Enter' && handleLinkStudent()}
+                      placeholder="Nhập mã học sinh (ví dụ: 4Q5KAX)"
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                      maxLength={10}
+                      disabled={linkingStudent}
+                    />
+                    <button
+                      onClick={handleLinkStudent}
+                      disabled={linkingStudent || !studentCode.trim()}
+                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                      {linkingStudent ? "Đang liên kết..." : "Liên kết"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Linked students list */}
+                {linkedStudents.length > 0 ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="w-5 h-5 text-gray-700" />
+                      <h4 className="font-semibold text-gray-900">
+                        Học sinh đã liên kết ({linkedStudents.length})
+                      </h4>
+                    </div>
+                    <div className="space-y-3">
+                      {linkedStudents.map((student) => (
+                        <div 
+                          key={student.id} 
+                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <User className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                              <h5 className="font-semibold text-gray-900">{student.displayName}</h5>
+                              <p className="text-sm text-gray-600">{student.email}</p>
+                              {student.grade && (
+                                <p className="text-sm text-gray-500">{student.grade}</p>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate(ENDPOINTS.PARENT.DASHBOARD)}
+                            className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                          >
+                            Xem tiến độ
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                    <p>Chưa liên kết học sinh nào</p>
+                    <p className="text-sm mt-1">Nhập mã học sinh ở trên để bắt đầu liên kết</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

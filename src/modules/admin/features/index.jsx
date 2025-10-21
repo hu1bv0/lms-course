@@ -410,13 +410,14 @@ const AdminDashboard = () => {
   // Debug log
   console.log('Admin Dashboard - Role check:', { role, USER_ROLES_ADMIN: USER_ROLES.ADMIN, isAdmin: role === USER_ROLES.ADMIN });
 
-  // Redirect if not admin - using useEffect to avoid setState during render
-  useEffect(() => {
-    if (role && role !== USER_ROLES.ADMIN) {
-      console.log('Not admin, redirecting to student dashboard');
-      navigate(ENDPOINTS.STUDENT.DASHBOARD);
-    }
-  }, [role, navigate]);
+  // Redirect if not admin - REMOVED to prevent conflict with RequiredAuth
+  // This logic is now handled by RequiredAuth component in routing
+  // useEffect(() => {
+  //   if (role && role !== USER_ROLES.ADMIN) {
+  //     console.log('Not admin, redirecting to student dashboard');
+  //     navigate(ENDPOINTS.STUDENT.DASHBOARD);
+  //   }
+  // }, [role, navigate]);
 
   // Show loading while checking role
   if (!role) {
@@ -427,10 +428,8 @@ const AdminDashboard = () => {
     );
   }
 
-  // Don't render if not admin
-  if (role !== USER_ROLES.ADMIN) {
-    return null;
-  }
+  // Since RequiredAuth handles role checking, we can safely render the admin dashboard
+  // if we reach this point, the user is authenticated and has admin role
 
   // Render different views
   if (currentView === 'reports') {

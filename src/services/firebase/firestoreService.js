@@ -103,7 +103,15 @@ class FirestoreService {
       if (value && typeof value === 'object' && value.seconds !== undefined && value.nanoseconds !== undefined) {
         // This is a Firebase Timestamp
         serialized[key] = new Date(value.seconds * 1000).toISOString();
-      } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      } else if (Array.isArray(value)) {
+        // Recursively serialize arrays
+        serialized[key] = value.map(item => {
+          if (item && typeof item === 'object') {
+            return this.serializeData(item);
+          }
+          return item;
+        });
+      } else if (value && typeof value === 'object') {
         // Recursively serialize nested objects
         serialized[key] = this.serializeData(value);
       }
@@ -124,9 +132,19 @@ class FirestoreService {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
+        const rawData = docSnap.data();
+        console.log(`🔍 [FirestoreService] RAW data from ${collectionName}/${docId}:`, rawData);
+        console.log(`🔍 [FirestoreService] RAW lessons:`, rawData?.lessons);
+        console.log(`🔍 [FirestoreService] RAW exams:`, rawData?.exams);
+        
+        const serializedData = this.serializeData(rawData);
+        console.log(`✅ [FirestoreService] SERIALIZED data:`, serializedData);
+        console.log(`✅ [FirestoreService] SERIALIZED lessons:`, serializedData?.lessons);
+        console.log(`✅ [FirestoreService] SERIALIZED exams:`, serializedData?.exams);
+        
         return {
           success: true,
-          data: this.serializeData(docSnap.data()),
+          data: serializedData,
           id: docSnap.id
         };
       }

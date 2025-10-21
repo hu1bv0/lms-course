@@ -29,6 +29,14 @@ import courseService from "../../../services/firebase/courseService";
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const { userData, logout, role, subscriptionType } = useAuth();
+  
+  // Extract only what we need to prevent unnecessary re-renders
+  const userId = userData?.uid;
+  const displayName = userData?.displayName;
+  
+  // Debug: Log renders (remove after testing)
+  console.log('StudentDashboard render:', { userId, role, subscriptionType });
+  
   const [activeTab, setActiveTab] = useState("overview");
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -65,11 +73,11 @@ const StudentDashboard = () => {
 
   // Load enrolled courses
   const loadEnrolledCourses = useCallback(async () => {
-    if (!userData?.uid) return;
+    if (!userId) return;
     
     try {
       setLoadingCourses(true);
-      const result = await courseService.getEnrolledCourses(userData.uid);
+      const result = await courseService.getEnrolledCourses(userId);
       console.log('getEnrolledCourses result:', result);
       if (result.success) {
         console.log('Setting enrolled courses:', result.courses);
@@ -82,15 +90,15 @@ const StudentDashboard = () => {
     } finally {
       setLoadingCourses(false);
     }
-  }, [userData?.uid]);
+  }, [userId]);
 
   // Load recent activities
   const loadRecentActivities = useCallback(async () => {
-    if (!userData?.uid) return;
+    if (!userId) return;
     
     try {
       setLoadingActivities(true);
-      const result = await courseService.getStudentRecentActivities(userData.uid);
+      const result = await courseService.getStudentRecentActivities(userId);
       if (result.success) {
         setRecentActivities(result.activities || []);
       } else {
@@ -103,15 +111,15 @@ const StudentDashboard = () => {
     } finally {
       setLoadingActivities(false);
     }
-  }, [userData?.uid]);
+  }, [userId]);
 
   // Load achievements
   const loadAchievements = useCallback(async () => {
-    if (!userData?.uid) return;
+    if (!userId) return;
     
     try {
       setLoadingAchievements(true);
-      const result = await courseService.getStudentAchievements(userData.uid);
+      const result = await courseService.getStudentAchievements(userId);
       if (result.success) {
         setAchievements(result.achievements);
       }
@@ -120,17 +128,20 @@ const StudentDashboard = () => {
     } finally {
       setLoadingAchievements(false);
     }
-  }, [userData?.uid]);
+  }, [userId]);
 
   // Handle course enrollment
   const handleEnrollCourse = useCallback(async (course) => {
-    if (!userData?.uid) return;
+    if (!userId) return;
     
     try {
-      const result = await courseService.enrollCourse(userData.uid, course.id);
+      const result = await courseService.enrollCourse(userId, course.id);
       if (result.success) {
-        // Reload enrolled courses
-        await loadEnrolledCourses();
+        // Reload enrolled courses directly
+        const enrolledResult = await courseService.getEnrolledCourses(userId);
+        if (enrolledResult.success) {
+          setEnrolledCourses(enrolledResult.courses);
+        }
         toast.success('Đăng ký khóa học thành công!', {
           position: "top-right",
           autoClose: 3000,
@@ -148,26 +159,28 @@ const StudentDashboard = () => {
         autoClose: 3000,
       });
     }
-  }, [userData?.uid, loadEnrolledCourses]);
+  }, [userId]);
 
   // Load enrolled courses on mount
   useEffect(() => {
-    loadEnrolledCourses();
-    loadAchievements();
-    loadRecentActivities();
-  }, [loadEnrolledCourses, loadAchievements, loadRecentActivities]);
+    if (userId) {
+      loadEnrolledCourses();
+      loadAchievements();
+      loadRecentActivities();
+    }
+  }, [userId, loadEnrolledCourses, loadAchievements, loadRecentActivities]);
 
   // Reload enrolled courses when component becomes visible (e.g., returning from course detail)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && userId) {
         loadEnrolledCourses();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [loadEnrolledCourses]);
+  }, [userId, loadEnrolledCourses]);
 
   // Calculate stats with real data
   const stats = {
@@ -194,41 +207,28 @@ const StudentDashboard = () => {
 
   // Recent activities are now loaded from real data via loadRecentActivities()
 
-  // Redirect if not student
-  useEffect(() => {
-    if (role && role !== USER_ROLES.STUDENT) {
-      // Redirect to appropriate dashboard based on role
-      switch (role) {
-        case USER_ROLES.ADMIN:
-          navigate(ENDPOINTS.ADMIN.DASHBOARD);
-          break;
-        case USER_ROLES.PARENT:
-          navigate(ENDPOINTS.PARENT.DASHBOARD);
-          break;
-        default:
-          navigate(ENDPOINTS.INDEX);
-          break;
-      }
-    }
-  }, [role, navigate]);
+  // Redirect if not student - REMOVED to prevent conflict with RequiredAuth
+  // This logic is now handled by RequiredAuth component in routing
+  // useEffect(() => {
+  //   if (role && role !== USER_ROLES.STUDENT) {
+  //     // Redirect to appropriate dashboard based on role
+  //     switch (role) {
+  //       case USER_ROLES.ADMIN:
+  //         navigate(ENDPOINTS.ADMIN.DASHBOARD);
+  //         break;
+  //       case USER_ROLES.PARENT:
+  //         navigate(ENDPOINTS.PARENT.DASHBOARD);
+  //         break;
+  //       default:
+  //         navigate(ENDPOINTS.INDEX);
+  //         break;
+  //     }
+  //   }
+  // }, [role, navigate]);
 
-  // Show loading while role is being determined
-  if (!role) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if not a student (will redirect via useEffect)
-  if (role !== USER_ROLES.STUDENT) {
-    return null;
-  }
-
+  // RequiredAuth already handles role checking, so we can safely render
+  // No need for additional role check that causes infinite loop
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -251,11 +251,11 @@ const StudentDashboard = () => {
                 >
                   <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-semibold">
-                      {userData?.displayName?.charAt(0) || "S"}
+                      {displayName?.charAt(0) || "S"}
                     </span>
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className="text-gray-700 font-medium">{userData?.displayName || "Học sinh"}</span>
+                    <span className="text-gray-700 font-medium">{displayName || "Học sinh"}</span>
                     {/* Tier Display */}
                     <div className={`flex items-center gap-1 text-xs font-semibold ${
                       subscriptionType === SUBSCRIPTION_TYPES.PREMIUM 
@@ -365,7 +365,7 @@ const StudentDashboard = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl font-bold">
-                      Chào mừng trở lại, {userData?.displayName || "Học sinh"}! 👋
+                      Chào mừng trở lại, {displayName || "Học sinh"}! 👋
                     </h2>
                     {/* Current Tier Badge */}
                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${

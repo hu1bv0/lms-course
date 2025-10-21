@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Play, 
   BookOpen, 
@@ -17,17 +17,19 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useSelector } from 'react-redux';
+import { useAuth } from '../../../hooks/useAuth';
 import courseService from '../../../services/firebase/courseService';
 import RatingModal from './RatingModal';
-import CoursePlayer from '../components/CoursePlayer';
-import LessonViewer from '../components/LessonViewer';
-import ExamViewer from '../components/ExamViewer';
+import CoursePlayer from './CoursePlayer';
+import LessonViewer from './LessonViewer';
+import ExamViewer from './ExamViewer';
 
 const CourseDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { user } = useSelector(state => state.auth);
+  const { userData } = useAuth();
+  const studentId = userData?.uid;
+  
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('overview'); // overview, lesson, exam
@@ -38,18 +40,34 @@ const CourseDetail = () => {
   const [completedParts, setCompletedParts] = useState(new Map()); // Map lessonId -> Set of completed parts
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [studentRating, setStudentRating] = useState(null);
-  const studentId = 'FewUVCMbr7QZBoW2pwVqx1NZtXm1'; // Use correct student ID from enrollment
 
-  useEffect(() => {
-    loadCourse();
-  }, [courseId]);
-
-  const loadCourse = async () => {
+  const loadCourse = useCallback(async () => {
+    console.log('loadCourse called with:', { studentId, courseId });
+    if (!studentId || !courseId) {
+      console.log('Missing studentId or courseId, aborting load');
+      return;
+    }
     try {
       setLoading(true);
+      console.log('Calling getCourseById for:', courseId);
       const result = await courseService.getCourseById(courseId);
+      console.log('🎯 CourseDetail - RAW result:', JSON.parse(JSON.stringify(result)));
+      console.log('🎯 CourseDetail - result.course keys:', Object.keys(result.course || {}));
+      
+      // FIX: Handle both old and new courseService structure
+      let courseData = result.course;
+      if (courseData && courseData.data) {
+        // Old structure: { success, course: { success, data, id } }
+        console.log('⚠️ Detected old courseService structure, using course.data');
+        courseData = courseData.data;
+      }
+      
+      console.log('🎯 CourseDetail - courseData.lessons:', courseData?.lessons);
+      console.log('🎯 CourseDetail - courseData.exams:', courseData?.exams);
+      console.log('🎯 CourseDetail - typeof lessons:', typeof courseData?.lessons);
+      console.log('🎯 CourseDetail - typeof exams:', typeof courseData?.exams);
       if (result.success) {
-        setCourse(result.course);
+        setCourse(courseData);
         
         // Kiểm tra và tự động enroll nếu chưa có
         console.log('Checking enrollment for:', studentId, 'course:', courseId);
@@ -97,9 +115,14 @@ const CourseDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [studentId, courseId, navigate]);
 
-  const loadCompletedParts = async (lessonId) => {
+  useEffect(() => {
+    loadCourse();
+  }, [loadCourse]);
+
+  const loadCompletedParts = useCallback(async (lessonId) => {
+    if (!studentId || !courseId) return;
     try {
       const result = await courseService.getCompletedParts(studentId, courseId, lessonId);
       if (result.success) {
@@ -112,7 +135,7 @@ const CourseDetail = () => {
     } catch (error) {
       console.error('Error loading completed parts:', error);
     }
-  };
+  }, [studentId, courseId]);
 
   const handleStartLesson = (lessonIndex) => {
     setCurrentLessonIndex(lessonIndex);
@@ -129,7 +152,7 @@ const CourseDetail = () => {
       const lessonId = course.lessons[currentLessonIndex].id;
       loadCompletedParts(lessonId);
     }
-  }, [currentView, currentLessonIndex, course]);
+  }, [currentView, currentLessonIndex, course, loadCompletedParts]);
 
   const handleStartExam = (examIndex) => {
     setCurrentExamIndex(examIndex);

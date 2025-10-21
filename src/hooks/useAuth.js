@@ -28,49 +28,66 @@ export const useAuth = () => {
   const dispatch = useDispatch();
   const authState = useSelector((state) => state.auth);
   
-  // Debug log to track re-renders
-  console.log('useAuth render:', { 
-    isAuthenticated: authState.isAuthenticated, 
-    isLoading: authState.isLoading,
-    userUid: authState.user?.uid 
-  });
+  // Debug log to track re-renders (commented out to reduce noise)
+  // console.log('useAuth render:', { 
+  //   isAuthenticated: authState.isAuthenticated, 
+  //   isLoading: authState.isLoading,
+  //   userUid: authState.user?.uid 
+  // });
   
-  // Memoize authState to prevent unnecessary re-renders
-  const memoizedAuthState = useMemo(() => authState, [
-    authState.user?.uid,
-    authState.userData?.email,
-    authState.isAuthenticated,
-    authState.isLoading,
-    authState.error,
-    authState.role,
-    authState.subscriptionType
-  ]);
+  // Extract primitive values to prevent unnecessary re-renders
+  const user = authState.user;
+  const userData = authState.userData;
+  const isAuthenticated = authState.isAuthenticated;
+  const isLoading = authState.isLoading;
+  const error = authState.error;
+  const role = authState.role;
+  const subscriptionType = authState.subscriptionType;
+
+  // Memoize dispatch to prevent useEffect re-runs
+  const memoizedDispatch = useCallback(dispatch, []);
 
   useEffect(() => {
     let isMounted = true;
-    let lastUserUid = null;
-    let isLoading = false;
+    let lastUserData = null;
+    let isProcessing = false;
     
     const unsubscribe = authService.onAuthStateChange(async (user) => {
-      if (!isMounted) return;
+      if (!isMounted || isProcessing) return;
       
-      // Prevent unnecessary dispatches
-      if (user && user.uid === lastUserUid) return;
-      if (isLoading) return; // Prevent multiple simultaneous calls
-      
-      lastUserUid = user?.uid;
-      isLoading = true;
-      
-      console.log('onAuthStateChange called with user:', user?.uid);
-      dispatch(setLoading(true));
+      isProcessing = true;
       
       try {
         if (user) {
           // User is signed in
           const userData = await authService.getUserById(user.uid);
-          console.log('getUserById result:', userData?.role);
-          if (userData && isMounted) {
-            dispatch(setUser({
+          
+          if (!isMounted) return;
+          
+          // Check if user data actually changed
+          const currentUserDataString = JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            role: userData?.role,
+            subscriptionType: userData?.subscriptionType
+          });
+          
+          // Show loading only on first load
+          const isFirstLoad = !lastUserData;
+          if (isFirstLoad) {
+            memoizedDispatch(setLoading(true));
+          }
+          
+          if (lastUserData === currentUserDataString) {
+            // Data hasn't changed, skip update
+            isProcessing = false;
+            return;
+          }
+          
+          lastUserData = currentUserDataString;
+          
+          if (userData) {
+            memoizedDispatch(setUser({
               user: {
                 uid: user.uid,
                 email: user.email,
@@ -80,22 +97,25 @@ export const useAuth = () => {
               },
               userData: serializeFirebaseData(userData)
             }));
-          } else if (isMounted) {
-            dispatch(clearUser());
+          } else {
+            memoizedDispatch(clearUser());
           }
-        } else if (isMounted) {
+        } else {
           // User is signed out
-          dispatch(clearUser());
+          if (lastUserData !== null) {
+            lastUserData = null;
+            memoizedDispatch(clearUser());
+          }
         }
       } catch (error) {
         console.error('Auth state change error:', error);
         if (isMounted) {
-          dispatch(setError(error.message));
+          memoizedDispatch(setError(error.message));
         }
       } finally {
         if (isMounted) {
-          dispatch(setLoading(false));
-          isLoading = false;
+          memoizedDispatch(setLoading(false));
+          isProcessing = false;
         }
       }
     });
@@ -104,14 +124,14 @@ export const useAuth = () => {
       isMounted = false;
       unsubscribe();
     };
-  }, [dispatch]);
+  }, [memoizedDispatch]); // Use memoized dispatch
 
   const login = useCallback(async (email, password) => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       const result = await authService.login(email, password);
       if (result.success) {
-        dispatch(setUser({
+        memoizedDispatch(setUser({
           user: {
             uid: result.user.uid,
             email: result.user.email,
@@ -124,98 +144,104 @@ export const useAuth = () => {
       }
       return result;
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   const register = useCallback(async (email, password, userData) => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       const result = await authService.register(email, password, userData);
       if (result.success) {
         // User will be automatically set via onAuthStateChanged
       }
       return result;
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   const loginWithGoogle = useCallback(async () => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       const result = await authService.loginWithGoogle();
       return result;
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   const loginWithFacebook = useCallback(async () => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       const result = await authService.loginWithFacebook();
       return result;
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   const logout = useCallback(async () => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       await authService.logout();
-      dispatch(clearUser());
+      memoizedDispatch(clearUser());
       // Redirect to login page after logout
       window.location.href = '/login';
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   const forgotPassword = useCallback(async (email) => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       const result = await authService.forgotPassword(email);
       return result;
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   const changePassword = useCallback(async (newPassword) => {
     try {
-      dispatch(setLoading(true));
+      memoizedDispatch(setLoading(true));
       const result = await authService.changePassword(newPassword);
       return result;
     } catch (error) {
-      dispatch(setError(error.message));
+      memoizedDispatch(setError(error.message));
       throw error;
     } finally {
-      dispatch(setLoading(false));
+      memoizedDispatch(setLoading(false));
     }
-  }, [dispatch]);
+  }, [memoizedDispatch]);
 
   return {
-    ...memoizedAuthState,
+    user,
+    userData,
+    isAuthenticated,
+    isLoading,
+    error,
+    role,
+    subscriptionType,
     login,
     register,
     loginWithGoogle,

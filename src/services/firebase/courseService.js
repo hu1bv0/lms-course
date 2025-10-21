@@ -55,21 +55,34 @@ class CourseService {
     }
   }
 
-  // Lấy khóa học theo ID
+  // Lấy khóa học theo ID v2.0
   async getCourseById(courseId) {
     try {
+      console.log('📚 [CourseService v2.0] getCourseById called with:', courseId, new Date().toISOString());
       const courseResult = await this.firestore.getDocument('courses', courseId);
+      console.log('📚 [CourseService] Firestore getDocument result:', courseResult);
+      console.log('📚 [CourseService] courseResult.data:', courseResult.data);
+      console.log('📚 [CourseService] courseResult.data.lessons:', courseResult.data?.lessons);
+      console.log('📚 [CourseService] courseResult.data.exams:', courseResult.data?.exams);
       
       if (!courseResult.success) {
         throw new Error('Course not found');
       }
       
       const course = courseResult.data;
+      console.log('📚 [CourseService] course variable:', course);
+      console.log('📚 [CourseService] course.lessons:', course?.lessons);
+      console.log('📚 [CourseService] course.exams:', course?.exams);
 
-      return {
+      const returnValue = {
         success: true,
         course: course
       };
+      console.log('📚 [CourseService] RETURNING:', returnValue);
+      console.log('📚 [CourseService] RETURNING.course.lessons:', returnValue.course?.lessons);
+      console.log('📚 [CourseService] RETURNING.course.exams:', returnValue.course?.exams);
+
+      return returnValue;
     } catch (error) {
       console.error('Error fetching course:', error);
       throw error;
@@ -317,14 +330,16 @@ class CourseService {
   async getStudentProgress(studentId, courseId) {
     try {
       const enrollmentId = `${studentId}_${courseId}`;
-      const enrollment = await this.firestore.getDocument('enrollments', enrollmentId);
+      const enrollmentResult = await this.firestore.getDocument('enrollments', enrollmentId);
       
-      if (!enrollment) {
+      if (!enrollmentResult.success || !enrollmentResult.data) {
         return {
           success: false,
           message: 'Enrollment not found'
         };
       }
+
+      const enrollment = enrollmentResult.data;
 
       return {
         success: true,
