@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import PropTypes from "prop-types";
 import { Suspense, lazy } from "react";
-import { useSelector } from "react-redux";
 import {
   BrowserRouter,
   Navigate,
@@ -19,7 +18,7 @@ const WEB_NAME = "Learnly";
 
 const RequiredAuth = ({ children, path, requiredRoles = [] }) => {
   const location = useLocation();
-  const { isAuthenticated, isLoading, role } = useSelector((state) => state.auth);
+  const { isAuthenticated, isLoading, role } = useAuth();
 
   // Show loading while checking auth state
   if (isLoading) {
@@ -31,20 +30,20 @@ const RequiredAuth = ({ children, path, requiredRoles = [] }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-        // Check role permissions if required
-        if (requiredRoles.length > 0 && !requiredRoles.includes(role)) {
-          // Redirect to appropriate dashboard based on role
-          switch (role) {
-            case 'admin':
-              return <Navigate to={ENDPOINTS.ADMIN.DASHBOARD} replace />;
-            case 'parent':
-              return <Navigate to={ENDPOINTS.PARENT.DASHBOARD} replace />;
-            case 'student':
-              return <Navigate to={ENDPOINTS.STUDENT.DASHBOARD} replace />;
-            default:
-              return <Navigate to={ENDPOINTS.STUDENT.DASHBOARD} replace />;
-          }
-        }
+  // Check role permissions if required
+  if (requiredRoles.length > 0 && !requiredRoles.includes(role)) {
+    // Redirect to appropriate dashboard based on role
+    switch (role) {
+      case 'admin':
+        return <Navigate to={ENDPOINTS.ADMIN.DASHBOARD} replace />;
+      case 'parent':
+        return <Navigate to={ENDPOINTS.PARENT.DASHBOARD} replace />;
+      case 'student':
+        return <Navigate to={ENDPOINTS.STUDENT.DASHBOARD} replace />;
+      default:
+        return <Navigate to={ENDPOINTS.STUDENT.DASHBOARD} replace />;
+    }
+  }
 
   return children;
 };
@@ -202,20 +201,8 @@ const profilePage = {
 
 
 // Các trang khác sẽ được thêm vào đây
-export const privateRouteData = [];
-export const publicRoutesData = [
-  // Landing Pages (Public)
-  landingPage,
-  newsPage,
-
-  // Auth Pages
-  loginPage,
-  forgotPasswordPage,
-  signinPage,
-  signinSuccessPage,
-  changePasswordPage,
-
-  // Role-based Dashboards
+export const privateRouteData = [
+  // Role-based Dashboards (Protected)
   adminDashboardPage,
   parentDashboardPage,
   parentCourseDetailPage,
@@ -223,11 +210,24 @@ export const publicRoutesData = [
   studentRootPage,
   studentCourseDetailPage,
 
-  // Shared Features
+  // Shared Features (Protected)
   subscriptionPage,
   paymentPage,
   chatbotPage,
   profilePage,
+];
+
+export const publicRoutesData = [
+  // Landing Pages (Public)
+  landingPage,
+  newsPage,
+
+  // Auth Pages (Public)
+  loginPage,
+  forgotPasswordPage,
+  signinPage,
+  signinSuccessPage,
+  changePasswordPage,
 ];
 
 // Improved route rendering function
@@ -299,6 +299,8 @@ const AppRoutes = () => {
         <Routes>
           {renderRoutes(publicRoutesData)}
           {renderRoutes(privateRouteData, true)}
+          {/* Catch-all route for 404s */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthWrapper>
     </BrowserRouter>

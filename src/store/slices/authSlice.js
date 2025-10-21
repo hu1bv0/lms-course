@@ -5,7 +5,7 @@ const initialState = {
   user: null,
   userData: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false, // Don't persist loading state
   error: null,
   role: null,
   subscriptionType: SUBSCRIPTION_TYPES.FREE,
