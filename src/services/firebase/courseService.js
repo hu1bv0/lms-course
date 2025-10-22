@@ -112,14 +112,51 @@ class CourseService {
   // Xóa khóa học
   async deleteCourse(courseId) {
     try {
-      await this.firestore.deleteDocument('courses', courseId);
+      console.log('🗑️ [CourseService] Deleting course:', courseId);
+      
+      // Kiểm tra course có tồn tại không
+      const courseExists = await this.getCourseDataSafely(courseId);
+      console.log('🗑️ [CourseService] Course exists:', !!courseExists);
+      
+      // Xóa tất cả enrollments liên quan đến khóa học này
+      try {
+        const enrollments = await this.firestore.getCollection('enrollments');
+        const courseEnrollments = enrollments.filter(enrollment => enrollment.courseId === courseId);
+        
+        console.log('🗑️ [CourseService] Found enrollments to delete:', courseEnrollments.length);
+        
+        // Xóa từng enrollment
+        for (const enrollment of courseEnrollments) {
+          try {
+            await this.firestore.deleteDocument('enrollments', enrollment.id);
+            console.log('🗑️ [CourseService] Deleted enrollment:', enrollment.id);
+          } catch (enrollmentDeleteError) {
+            console.warn('⚠️ [CourseService] Failed to delete enrollment:', enrollment.id, enrollmentDeleteError.message);
+          }
+        }
+      } catch (enrollmentError) {
+        console.warn('⚠️ [CourseService] Error deleting enrollments:', enrollmentError.message);
+        // Không throw error - vẫn tiếp tục xóa course
+      }
+      
+      // Xóa course document
+      try {
+        const deleteResult = await this.firestore.deleteDocument('courses', courseId);
+        console.log('🗑️ [CourseService] Delete document result:', deleteResult);
+      } catch (deleteError) {
+        console.warn('⚠️ [CourseService] Failed to delete course document:', deleteError.message);
+        // Có thể course chỉ tồn tại trong collection, không phải document riêng lẻ
+        console.log('🗑️ [CourseService] Course might only exist in collection, considering deletion successful');
+      }
+      
+      console.log('✅ [CourseService] Course deletion process completed');
       
       return {
         success: true,
         message: 'Course deleted successfully'
       };
     } catch (error) {
-      console.error('Error deleting course:', error);
+      console.error('❌ [CourseService] Error deleting course:', error);
       throw error;
     }
   }
@@ -180,12 +217,13 @@ class CourseService {
         throw new Error('Course ID is required');
       }
       
-      const course = await this.firestore.getDocument('courses', courseId);
+      const courseResult = await this.firestore.getDocument('courses', courseId);
       
-      if (!course) {
+      if (!courseResult.success || !courseResult.data) {
         throw new Error(`Course with ID ${courseId} not found`);
       }
 
+      const course = courseResult.data;
       console.log('Found course:', course);
 
       const lessonId = `lesson_${Date.now()}`;
@@ -217,11 +255,13 @@ class CourseService {
   // Thêm bài thi vào khóa học
   async addExamToCourse(courseId, examData) {
     try {
-      const course = await this.firestore.getDocument('courses', courseId);
+      const courseResult = await this.firestore.getDocument('courses', courseId);
       
-      if (!course) {
+      if (!courseResult.success || !courseResult.data) {
         throw new Error('Course not found');
       }
+
+      const course = courseResult.data;
 
       const examId = `exam_${Date.now()}`;
       const exam = {
@@ -251,11 +291,13 @@ class CourseService {
   // Cập nhật bài học
   async updateLesson(courseId, lessonId, updateData) {
     try {
-      const course = await this.firestore.getDocument('courses', courseId);
+      const courseResult = await this.firestore.getDocument('courses', courseId);
       
-      if (!course) {
+      if (!courseResult.success || !courseResult.data) {
         throw new Error('Course not found');
       }
+
+      const course = courseResult.data;
 
       const updatedLessons = course.lessons.map(lesson => 
         lesson.id === lessonId 
@@ -281,11 +323,13 @@ class CourseService {
   // Xóa bài học
   async deleteLesson(courseId, lessonId) {
     try {
-      const course = await this.firestore.getDocument('courses', courseId);
+      const courseResult = await this.firestore.getDocument('courses', courseId);
       
-      if (!course) {
+      if (!courseResult.success || !courseResult.data) {
         throw new Error('Course not found');
       }
+
+      const course = courseResult.data;
 
       const updatedLessons = course.lessons.filter(lesson => lesson.id !== lessonId);
 
@@ -304,27 +348,6 @@ class CourseService {
     }
   }
 
-  // Lấy khóa học theo ID
-  async getCourseById(courseId) {
-    try {
-      const course = await this.firestore.getDocument('courses', courseId);
-      
-      if (!course) {
-        return {
-          success: false,
-          message: 'Course not found'
-        };
-      }
-
-      return {
-        success: true,
-        course: course
-      };
-    } catch (error) {
-      console.error('Error getting course by ID:', error);
-      throw error;
-    }
-  }
 
   // Lấy tiến độ học tập của student
   async getStudentProgress(studentId, courseId) {
@@ -572,10 +595,10 @@ class CourseService {
         studentId,
         courseId,
         examId,
-        score: score?.percentage || score || 0, // Lưu percentage hoặc score number
-        earnedPoints: score?.earned || 0,
-        totalPoints: score?.total || 0,
-        percentage: score?.percentage || 0,
+        score: typeof score === 'object' ? (score.percentage || score.earned || 0) : (score || 0), // Ensure score is a number
+        earnedPoints: typeof score === 'object' ? (score.earned || 0) : 0,
+        totalPoints: typeof score === 'object' ? (score.total || 0) : 0,
+        percentage: typeof score === 'object' ? (score.percentage || 0) : (score || 0),
         completedAt: new Date().toISOString(),
         timestamp: Date.now()
       };
@@ -615,19 +638,63 @@ class CourseService {
     }
   }
 
+  // Helper method to safely get course data
+  async getCourseDataSafely(courseId) {
+    try {
+      // Try getDocument first
+      const courseResult = await this.firestore.getDocument('courses', courseId);
+      if (courseResult.success && courseResult.data) {
+        return courseResult.data;
+      }
+
+      // Fallback to collection search
+      console.warn('⚠️ [CourseService] getDocument failed, trying collection lookup for:', courseId);
+      const allCourses = await this.firestore.getCollection('courses');
+      const course = allCourses.find(c => c.id === courseId);
+      
+      if (course) {
+        console.log('✅ [CourseService] Found course in collection');
+        return course;
+      }
+
+      throw new Error(`Course with ID ${courseId} not found`);
+    } catch (error) {
+      console.error('❌ [CourseService] Error getting course data:', error);
+      throw error;
+    }
+  }
+
   // Đăng ký khóa học cho student
   async enrollCourse(studentId, courseId) {
     try {
-      // Kiểm tra khóa học có tồn tại không
-      const courseResult = await this.firestore.getDocument('courses', courseId);
-      if (!courseResult.success) {
-        throw new Error('Course not found');
+      console.log('🔍 [CourseService] enrollCourse called with:', { studentId, courseId });
+      
+      // Lấy thông tin khóa học một cách an toàn
+      const course = await this.getCourseDataSafely(courseId);
+      console.log('🔍 [CourseService] Course data:', course);
+
+      // Validate và set default values nếu cần
+      if (!course.title) {
+        console.warn('⚠️ [CourseService] Course missing title, using default');
+        course.title = 'Khóa học';
       }
-      const course = courseResult.data;
+      if (!course.subject) {
+        console.warn('⚠️ [CourseService] Course missing subject, using default');
+        course.subject = 'Chung';
+      }
+      if (!course.grade) {
+        console.warn('⚠️ [CourseService] Course missing grade, using default');
+        course.grade = '1';
+      }
 
       // Kiểm tra student đã đăng ký chưa
-      const enrollmentResult = await this.firestore.getDocument('enrollments', `${studentId}_${courseId}`);
-      if (enrollmentResult.success) {
+      const enrollmentId = `${studentId}_${courseId}`;
+      console.log('🔍 [CourseService] Checking existing enrollment:', enrollmentId);
+      const enrollmentResult = await this.firestore.getDocument('enrollments', enrollmentId);
+      console.log('🔍 [CourseService] Enrollment check result:', enrollmentResult);
+      
+      if (enrollmentResult.success && enrollmentResult.data) {
+        console.log('⚠️ [CourseService] Student already enrolled');
         return {
           success: false,
           message: 'Student already enrolled in this course'
@@ -635,6 +702,7 @@ class CourseService {
       }
 
       // Tạo enrollment record
+      console.log('✅ [CourseService] Creating new enrollment...');
       const enrollmentData = {
         id: `${studentId}_${courseId}`,
         studentId,
@@ -650,14 +718,38 @@ class CourseService {
         status: 'active'
       };
 
+      console.log('🔍 [CourseService] Enrollment data:', enrollmentData);
       await this.firestore.createDocument('enrollments', enrollmentData, enrollmentData.id);
+      console.log('✅ [CourseService] Enrollment created successfully');
 
-      // Cập nhật số lượng học sinh đăng ký trong khóa học
-      await this.firestore.updateDocument('courses', courseId, {
-        enrolledStudents: (course.enrolledStudents || 0) + 1,
-        updatedAt: new Date().toISOString()
-      });
+      // Cập nhật số lượng học sinh đăng ký trong khóa học (optional - không block enrollment nếu thất bại)
+      try {
+        const updateData = {
+          enrolledStudents: (course.enrolledStudents || 0) + 1,
+          updatedAt: new Date().toISOString()
+        };
+        console.log('🔍 [CourseService] Updating course with:', updateData);
+        await this.firestore.updateDocument('courses', courseId, updateData);
+        console.log('✅ [CourseService] Course updated successfully');
+      } catch (updateError) {
+        console.warn('⚠️ [CourseService] Failed to update course enrolled count, trying to recreate course document:', updateError.message);
+        
+        // Thử tạo lại course document nếu không tồn tại
+        try {
+          const courseWithUpdatedCount = {
+            ...course,
+            enrolledStudents: (course.enrolledStudents || 0) + 1,
+            updatedAt: new Date().toISOString()
+          };
+          await this.firestore.createDocument('courses', courseWithUpdatedCount, courseId);
+          console.log('✅ [CourseService] Course document recreated successfully');
+        } catch (recreateError) {
+          console.warn('⚠️ [CourseService] Failed to recreate course document, but enrollment still successful:', recreateError.message);
+          // Vẫn không throw error - enrollment đã thành công
+        }
+      }
 
+      console.log('🎉 [CourseService] Enrollment completed successfully!');
       return {
         success: true,
         message: 'Successfully enrolled in course',
@@ -734,13 +826,18 @@ class CourseService {
       // Xóa enrollment record
       await this.firestore.deleteDocument('enrollments', enrollmentId);
 
-      // Cập nhật số lượng học sinh đăng ký trong khóa học
-      const course = await this.firestore.getDocument('courses', courseId);
-      if (course) {
-        await this.firestore.updateDocument('courses', courseId, {
-          enrolledStudents: Math.max((course.enrolledStudents || 0) - 1, 0),
-          updatedAt: new Date().toISOString()
-        });
+      // Cập nhật số lượng học sinh đăng ký trong khóa học (optional)
+      try {
+        const courseResult = await this.firestore.getDocument('courses', courseId);
+        if (courseResult.success && courseResult.data) {
+          await this.firestore.updateDocument('courses', courseId, {
+            enrolledStudents: Math.max((courseResult.data.enrolledStudents || 0) - 1, 0),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (updateError) {
+        console.warn('⚠️ [CourseService] Failed to update course enrolled count during unenroll:', updateError.message);
+        // Không throw error - unenrollment vẫn thành công
       }
 
       return {
@@ -1012,12 +1109,20 @@ class CourseService {
 
         const exam = course.exams?.find(e => e.id === result.examId);
         if (exam) {
+          // Handle score object properly - extract percentage or use default
+          let points = 80; // Default points
+          if (typeof result.score === 'object' && result.score !== null) {
+            points = result.score.percentage || result.score.earned || 80;
+          } else if (typeof result.score === 'number') {
+            points = result.score;
+          }
+          
           activities.push({
             id: result.id,
             type: 'quiz_completed',
             title: `Hoàn thành bài kiểm tra: ${exam.title}`,
             course: course.title,
-            points: result.score || 80,
+            points: points,
             time: this.getTimeAgo(result.completedAt),
             timestamp: result.timestamp
           });

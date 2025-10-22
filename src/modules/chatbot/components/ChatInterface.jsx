@@ -30,7 +30,7 @@ const ChatInterface = () => {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [editingTitle, setEditingTitle] = useState(null);
   const [newTitle, setNewTitle] = useState('');
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Load chat sessions khi component mount (chỉ load existing chats)
   useEffect(() => {
@@ -39,23 +39,56 @@ const ChatInterface = () => {
     }
   }, [userData?.uid]);
 
-  // Load messages khi chuyển chat (chỉ khi có chatId)
+  // Load messages khi chuyển chat
   useEffect(() => {
+    // Reset container trước khi load messages mới
+    resetScrollPosition();
+    
     if (currentChatId) {
       loadMessages(currentChatId);
     } else {
-      // Không có chat, để messages trống
       setMessages([]);
     }
   }, [currentChatId]);
 
-  // Auto scroll to bottom khi có tin nhắn mới
+  // Auto scroll to bottom chỉ khi có tin nhắn mới
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    } else {
+      // Nếu không có messages, reset container
+      resetScrollPosition();
+    }
   }, [messages]);
 
+  // Reset container khi messages length thay đổi (đặc biệt khi giảm)
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      // Force container recalculate height
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.style.height = 'auto';
+          messagesContainerRef.current.offsetHeight; // Trigger reflow
+        }
+      }, 50);
+    }
+  }, [messages.length]);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  const resetScrollPosition = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = 0;
+      // Force layout recalculation để container thu nhỏ lại
+      messagesContainerRef.current.style.height = 'auto';
+      messagesContainerRef.current.style.minHeight = '0';
+      // Trigger reflow
+      messagesContainerRef.current.offsetHeight;
+    }
   };
 
   // Load danh sách chat sessions
@@ -65,12 +98,19 @@ const ChatInterface = () => {
       const result = await aiService.getUserChatSessions(userData.uid);
       
       if (result.success) {
+        console.log('📋 Loaded chat sessions:', result.sessions?.map(s => ({
+          id: s.id,
+          title: s.title?.slice(0, 20),
+          updatedAt: s.updatedAt,
+          createdAt: s.createdAt
+        })));
+        
         setChatSessions(result.sessions || []);
         
-        // Nếu có chat, chọn chat đầu tiên
-        if (result.sessions && result.sessions.length > 0) {
+        // Nếu có chat, chọn chat đầu tiên (chỉ khi chưa có chat nào được chọn)
+        if (result.sessions && result.sessions.length > 0 && !currentChatId) {
           setCurrentChatId(result.sessions[0].id);
-        } else {
+        } else if (!result.sessions || result.sessions.length === 0) {
           // Không có chat nào, để trống như ChatGPT
           setCurrentChatId(null);
           setMessages([]);
@@ -103,6 +143,7 @@ const ChatInterface = () => {
       
       if (result.success) {
         setMessages(result.messages || []);
+        // Không tự động scroll, để useEffect xử lý
       } else {
         console.error('Failed to load messages:', result.error);
         setMessages([]);
@@ -278,12 +319,29 @@ const ChatInterface = () => {
         };
         setMessages(prev => [...prev, aiMessage]);
 
-        // Cập nhật chat session trong state với messageCount mới
-        setChatSessions(prev => prev.map(chat => 
-          chat.id === chatId 
-            ? { ...chat, messageCount: messages.length + 2, updatedAt: new Date() }
-            : chat
-        ));
+        // Cập nhật chat session và di chuyển lên đầu danh sách
+        setChatSessions(prev => {
+          const updatedChat = prev.find(chat => chat.id === chatId);
+          if (updatedChat) {
+            const otherChats = prev.filter(chat => chat.id !== chatId);
+            const updatedChatWithNewData = {
+              ...updatedChat,
+              title: userMessage.slice(0, 50) + (userMessage.length > 50 ? '...' : ''),
+              messageCount: (updatedChat.messageCount || 0) + 2,
+              updatedAt: new Date()
+            };
+            
+            console.log('🔄 Moving chat to top:', {
+              chatId,
+              oldTitle: updatedChat.title,
+              newTitle: updatedChatWithNewData.title,
+              newUpdatedAt: updatedChatWithNewData.updatedAt.toISOString()
+            });
+            
+            return [updatedChatWithNewData, ...otherChats];
+          }
+          return prev;
+        });
       } else {
         // Xóa tin nhắn user nếu gửi thất bại
         setMessages(prev => prev.filter(msg => msg.id !== tempUserMessage.id));
@@ -309,9 +367,9 @@ const ChatInterface = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Sidebar - Chat Sessions */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 max-w-sm bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <button
@@ -401,7 +459,7 @@ const ChatInterface = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* Chat Header */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
@@ -426,22 +484,25 @@ const ChatInterface = () => {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto min-h-0 max-h-full">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
-              <Bot className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Chào mừng đến với Novastep!
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Tôi sẽ giúp bạn học tập bằng phương pháp Socrates. 
-              </p>
-              <p className="text-sm text-gray-500">
-                Nhập câu hỏi và nhấn <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Enter</kbd> để bắt đầu trò chuyện!
-              </p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center py-12">
+                <Bot className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Chào mừng đến với Novastep!
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Tôi sẽ giúp bạn học tập bằng phương pháp Socrates. 
+                </p>
+                <p className="text-sm text-gray-500">
+                  Nhập câu hỏi và nhấn <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Enter</kbd> để bắt đầu trò chuyện!
+                </p>
+              </div>
             </div>
           ) : (
-            messages.map((message) => (
+            <div className="p-4 space-y-4">
+              {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex gap-3 ${
@@ -479,11 +540,13 @@ const ChatInterface = () => {
                   </div>
                 )}
               </div>
-            ))
+            ))}
+            </div>
           )}
           
           {isLoading && (
-            <div className="flex gap-3 justify-start">
+            <div className="p-4">
+              <div className="flex gap-3 justify-start">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <Bot className="w-5 h-5 text-white" />
               </div>
@@ -493,14 +556,13 @@ const ChatInterface = () => {
                   <span className="text-gray-600">Novastep đang suy nghĩ...</span>
                 </div>
               </div>
+              </div>
             </div>
           )}
-          
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
-        <div className="bg-white border-t border-gray-200 p-4">
+        <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
           <div className="flex gap-3">
             <textarea
               value={inputMessage}

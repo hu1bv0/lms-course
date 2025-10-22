@@ -480,7 +480,7 @@ const StudentDashboard = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-green-600">+{activity.points} điểm</p>
+                        <p className="text-sm font-semibold text-green-600">+{typeof activity.points === 'number' ? activity.points : 50} điểm</p>
                         <p className="text-xs text-gray-500">{activity.time}</p>
                       </div>
                     </div>
@@ -591,6 +591,7 @@ const StudentDashboard = () => {
           <CourseList 
             userRole={role}
             subscriptionType={subscriptionType}
+            userId={userId}
             onEnrollCourse={handleEnrollCourse}
           />
         )}

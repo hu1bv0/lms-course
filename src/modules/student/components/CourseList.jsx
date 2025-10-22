@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 import courseService from '../../../services/firebase/courseService';
 import { ACCESS_LEVELS, DIFFICULTY_LEVELS } from '../../../constants/educationConstants';
 
-const CourseList = ({ userRole, subscriptionType, onEnrollCourse }) => {
+const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
@@ -31,8 +31,9 @@ const CourseList = ({ userRole, subscriptionType, onEnrollCourse }) => {
 
   // Load enrolled courses separately
   const loadEnrolledCourses = async () => {
+    if (!userId) return; // Don't load if no userId
+    
     try {
-        const userId = 'FewUVCMbr7QZBoW2pwVqx1NZtXm1'; // Use correct student ID
       console.log('Loading enrolled courses for user:', userId);
       const enrolledResult = await courseService.getEnrolledCourses(userId);
       console.log('Enrolled courses result:', enrolledResult);
@@ -49,8 +50,14 @@ const CourseList = ({ userRole, subscriptionType, onEnrollCourse }) => {
   // Load courses on component mount
   useEffect(() => {
     loadCourses();
-    loadEnrolledCourses();
   }, []);
+
+  // Load enrolled courses when userId changes
+  useEffect(() => {
+    if (userId) {
+      loadEnrolledCourses();
+    }
+  }, [userId]);
 
   const loadCourses = async () => {
     try {

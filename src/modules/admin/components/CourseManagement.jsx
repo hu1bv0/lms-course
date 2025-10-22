@@ -13,7 +13,8 @@ import {
   Search,
   Filter,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
 import {
   EDUCATION_LEVELS,
@@ -26,6 +27,7 @@ import {
   getAllGrades
 } from '../../../constants/educationConstants';
 import courseService from '../../../services/firebase/courseService';
+import { toast } from 'react-toastify';
 import CreateLessonModal from './CreateLessonModal';
 import CreateCourseModal from './CreateCourseModal';
 import CreateExamModal from './CreateExamModal';
@@ -54,24 +56,31 @@ const CourseManagement = () => {
   const [selectedCourseForExam, setSelectedCourseForExam] = useState(null);
   const [selectedExamForEdit, setSelectedExamForEdit] = useState(null);
   
+  // Delete course states
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [selectedCourseForDelete, setSelectedCourseForDelete] = useState(null);
+  
 
   // Load courses from Firebase
   const loadCourses = useCallback(async () => {
+    console.log('🔄 [CourseManagement] Loading courses...');
     setLoading(true);
-    // Clear any previous errors - using toast instead
+    
     try {
       const response = await courseService.getAllCourses();
-      setCourses(response.courses);
+      console.log('📚 [CourseManagement] Courses loaded:', response.courses?.length || 0);
+      setCourses(response.courses || []);
     } catch (error) {
-      console.error('Error loading courses:', error);
+      console.error('❌ [CourseManagement] Error loading courses:', error);
       toast.error('Không thể tải danh sách khóa học', {
         position: 'top-right',
         autoClose: 3000,
       });
-      // Fallback to mock data
-      setCourses(mockCourses);
+      // Fallback to empty array instead of mock data
+      setCourses([]);
     } finally {
       setLoading(false);
+      console.log('✅ [CourseManagement] Load courses completed');
     }
   }, []);
 
@@ -263,6 +272,63 @@ const CourseManagement = () => {
     }
   };
 
+  // Handle delete course
+  const handleDeleteCourse = (courseId) => {
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+      setSelectedCourseForDelete(course);
+      setIsDeleteConfirmOpen(true);
+    }
+  };
+
+  // Confirm delete course
+  const confirmDeleteCourse = async () => {
+    if (!selectedCourseForDelete) {
+      console.warn('No course selected for deletion');
+      return;
+    }
+    
+    console.log('🗑️ [CourseManagement] Starting course deletion:', selectedCourseForDelete.id);
+    setLoading(true);
+    
+    try {
+      const response = await courseService.deleteCourse(selectedCourseForDelete.id);
+      console.log('🗑️ [CourseManagement] Delete response:', response);
+      
+      if (response && response.success) {
+        toast.success('Xóa khóa học thành công!', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+        
+        console.log('🔄 [CourseManagement] Reloading courses...');
+        // Reload courses from Firebase
+        await loadCourses();
+        console.log('✅ [CourseManagement] Courses reloaded successfully');
+        
+        // Close modal and reset state
+        setIsDeleteConfirmOpen(false);
+        setSelectedCourseForDelete(null);
+      } else {
+        throw new Error('Delete response indicates failure');
+      }
+    } catch (error) {
+      console.error('❌ [CourseManagement] Error deleting course:', error);
+      toast.error(`Không thể xóa khóa học: ${error.message}`, {
+        position: 'top-right',
+        autoClose: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel delete course
+  const cancelDeleteCourse = () => {
+    setIsDeleteConfirmOpen(false);
+    setSelectedCourseForDelete(null);
+  };
+
   // Handle edit lesson
   const handleEditLesson = (courseId, lessonId) => {
     const course = courses.find(c => c.id === courseId);
@@ -429,13 +495,24 @@ const CourseManagement = () => {
           <h2 className="text-2xl font-bold text-gray-900">Quản lý khóa học</h2>
           <p className="text-gray-600">Quản lý khóa học, bài học và bài thi theo cấp học</p>
         </div>
-        <button 
-          onClick={handleCreateCourse}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Thêm khóa học
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={loadCourses}
+            disabled={loading}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 disabled:opacity-50"
+            title="Tải lại danh sách khóa học"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Tải lại
+          </button>
+          <button 
+            onClick={handleCreateCourse}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Thêm khóa học
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -695,7 +772,11 @@ const CourseManagement = () => {
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button className="text-red-600 hover:text-red-800 p-2">
+                    <button 
+                      onClick={() => handleDeleteCourse(course.id)}
+                      className="text-red-600 hover:text-red-800 p-2"
+                      title="Xóa khóa học"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -783,6 +864,59 @@ const CourseManagement = () => {
         onSave={handleUpdateExam}
         isEdit={true}
       />
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Xác nhận xóa khóa học</h3>
+                <p className="text-sm text-gray-600">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Bạn có chắc chắn muốn xóa khóa học <strong>"{selectedCourseForDelete?.title}"</strong>?
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                Tất cả bài học, bài thi và dữ liệu liên quan sẽ bị xóa vĩnh viễn.
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelDeleteCourse}
+                disabled={loading}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDeleteCourse}
+                disabled={loading}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Đang xóa...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Xóa khóa học
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

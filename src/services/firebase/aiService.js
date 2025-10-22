@@ -270,7 +270,7 @@ class AIService {
   // Lấy danh sách chat sessions của user
   async getUserChatSessions(userId) {
     try {
-      console.log('Getting chat sessions for user:', userId);
+      console.log('🔍 Getting chat sessions for user:', userId);
       
       // Sử dụng method đơn giản hơn
       const result = await this.firestore.getCollection('chat_sessions');
@@ -292,12 +292,63 @@ class AIService {
       if (Array.isArray(chatSessions)) {
         // Filter manually
         const userSessions = chatSessions.filter(session => session.userId === userId);
-        // Sort by updatedAt desc
+        console.log(`📋 Found ${userSessions.length} sessions for user ${userId}`);
+        // Sort by updatedAt desc (newest first) - simplified
         userSessions.sort((a, b) => {
-          const aTime = a.updatedAt?.seconds || a.updatedAt || 0;
-          const bTime = b.updatedAt?.seconds || b.updatedAt || 0;
-          return bTime - aTime;
+          const getTimestamp = (session) => {
+            // Try updatedAt first
+            if (session.updatedAt) {
+              if (session.updatedAt.seconds) {
+                return session.updatedAt.seconds * 1000; // Firestore Timestamp
+              }
+              if (typeof session.updatedAt === 'string') {
+                return new Date(session.updatedAt).getTime(); // ISO string
+              }
+              if (session.updatedAt instanceof Date) {
+                return session.updatedAt.getTime(); // Date object
+              }
+              if (typeof session.updatedAt === 'number') {
+                return session.updatedAt; // Unix timestamp
+              }
+            }
+            
+            // Fallback to createdAt
+            if (session.createdAt) {
+              if (session.createdAt.seconds) {
+                return session.createdAt.seconds * 1000;
+              }
+              if (typeof session.createdAt === 'string') {
+                return new Date(session.createdAt).getTime();
+              }
+              if (session.createdAt instanceof Date) {
+                return session.createdAt.getTime();
+              }
+              if (typeof session.createdAt === 'number') {
+                return session.createdAt;
+              }
+            }
+            
+            return 0; // Default if no timestamp
+          };
+          
+          const aTime = getTimestamp(a);
+          const bTime = getTimestamp(b);
+          
+          console.log('🔄 Sorting chats:', {
+            a: { id: a.id, title: a.title?.slice(0, 20), time: new Date(aTime).toLocaleString('vi-VN') },
+            b: { id: b.id, title: b.title?.slice(0, 20), time: new Date(bTime).toLocaleString('vi-VN') },
+            result: bTime - aTime > 0 ? 'b first' : 'a first'
+          });
+          
+          return bTime - aTime; // Newest first (larger timestamp first)
         });
+        
+        console.log('✅ Final sorted sessions:', userSessions.map(s => ({
+          id: s.id,
+          title: s.title?.slice(0, 20),
+          updatedAt: s.updatedAt,
+          createdAt: s.createdAt
+        })));
         
         return {
           success: true,
@@ -326,9 +377,9 @@ class AIService {
     try {
       console.log('Getting messages for chat:', chatId);
       
-      // Sử dụng method đơn giản hơn
+      // Load tất cả messages rồi filter thủ công (tránh cần index)
       const result = await this.firestore.getCollection('chat_messages');
-      console.log('getCollection result for messages:', result);
+      console.log(`📨 Total messages in collection:`, result?.length || 0);
       
       // Handle different return formats
       let chatMessages = [];
@@ -344,13 +395,29 @@ class AIService {
       }
       
       if (Array.isArray(chatMessages)) {
-        // Filter manually
+        // Filter thủ công messages của chat này
         const filteredMessages = chatMessages.filter(message => message.chatId === chatId);
-        // Sort by timestamp asc
+        console.log(`🔍 Filtered ${filteredMessages.length} messages for chat ${chatId}`);
+        
+        // Sort thủ công theo timestamp (cũ nhất trước)
         filteredMessages.sort((a, b) => {
-          const aTime = a.timestamp || 0;
-          const bTime = b.timestamp || 0;
-          return aTime - bTime;
+          const getTime = (msg) => {
+            if (msg.timestamp?.seconds) {
+              return msg.timestamp.seconds * 1000; // Firestore Timestamp
+            }
+            if (typeof msg.timestamp === 'string') {
+              return new Date(msg.timestamp).getTime(); // ISO string
+            }
+            if (msg.timestamp instanceof Date) {
+              return msg.timestamp.getTime(); // Date object
+            }
+            if (typeof msg.timestamp === 'number') {
+              return msg.timestamp; // Unix timestamp
+            }
+            return 0; // Default
+          };
+          
+          return getTime(a) - getTime(b); // Cũ nhất trước (ascending)
         });
         
         return {
