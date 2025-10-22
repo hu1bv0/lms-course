@@ -41,9 +41,6 @@ const ChatInterface = () => {
 
   // Load messages khi chuyển chat
   useEffect(() => {
-    // Reset container trước khi load messages mới
-    resetScrollPosition();
-    
     if (currentChatId) {
       loadMessages(currentChatId);
     } else {
@@ -51,28 +48,12 @@ const ChatInterface = () => {
     }
   }, [currentChatId]);
 
-  // Auto scroll to bottom chỉ khi có tin nhắn mới
+  // Auto scroll to bottom khi có tin nhắn mới
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
-    } else {
-      // Nếu không có messages, reset container
-      resetScrollPosition();
     }
   }, [messages]);
-
-  // Reset container khi messages length thay đổi (đặc biệt khi giảm)
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      // Force container recalculate height
-      setTimeout(() => {
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.style.height = 'auto';
-          messagesContainerRef.current.offsetHeight; // Trigger reflow
-        }
-      }, 50);
-    }
-  }, [messages.length]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -83,11 +64,7 @@ const ChatInterface = () => {
   const resetScrollPosition = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = 0;
-      // Force layout recalculation để container thu nhỏ lại
-      messagesContainerRef.current.style.height = 'auto';
-      messagesContainerRef.current.style.minHeight = '0';
-      // Trigger reflow
-      messagesContainerRef.current.offsetHeight;
+      console.log('🔄 Scroll reset to top');
     }
   };
 
@@ -459,9 +436,9 @@ const ChatInterface = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 relative">
         {/* Chat Header */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 p-4 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -484,7 +461,17 @@ const ChatInterface = () => {
         </div>
 
         {/* Messages Area */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto min-h-0 max-h-full">
+        <div 
+          key={`messages-${currentChatId || 'empty'}`}
+          ref={messagesContainerRef} 
+          className="absolute overflow-y-auto overflow-x-hidden"
+          style={{ 
+            top: '73px', // Header height
+            bottom: '81px', // Input area height  
+            left: '0',
+            right: '0'
+          }}
+        >
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center py-12">
@@ -562,7 +549,7 @@ const ChatInterface = () => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
           <div className="flex gap-3">
             <textarea
               value={inputMessage}
