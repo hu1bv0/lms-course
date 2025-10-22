@@ -361,7 +361,7 @@ const CourseManagement = () => {
         // Close modal and reset ALL states
         setIsDeleteConfirmOpen(false);
         setSelectedCourseForDelete(null);
-        setSelectedCourse(null);
+        setSelectedCourseForEdit(null);
         setSelectedCourseForLesson(null);
         setSelectedCourseForExam(null);
         

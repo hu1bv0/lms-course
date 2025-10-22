@@ -21,7 +21,19 @@ class CourseService {
         status: 'active'
       };
 
+      console.log('🆕 [CourseService] Creating course with ID:', courseId);
+      console.log('🆕 [CourseService] Course data:', course);
+      
+      // Sử dụng setDoc để đảm bảo document được tạo với custom ID
       await this.firestore.createDocument('courses', course, courseId);
+      
+      // Verify course was created
+      const verifyResult = await this.firestore.getDocument('courses', courseId);
+      if (!verifyResult.success) {
+        throw new Error('Failed to create course - verification failed');
+      }
+      
+      console.log('✅ [CourseService] Course created and verified:', courseId);
       
       return {
         success: true,
@@ -36,14 +48,34 @@ class CourseService {
   // Lấy tất cả khóa học
   async getAllCourses() {
     try {
+      console.log('📚 [CourseService] getAllCourses called');
+      
+      // Đọc từ collection để lấy danh sách IDs
       const courses = await this.firestore.getCollection('courses');
+      console.log('📚 [CourseService] Raw courses from collection:', courses);
+      
+      // Verify từng course bằng cách đọc document
+      const verifiedCourses = [];
+      for (const course of courses) {
+        const docResult = await this.firestore.getDocument('courses', course.id);
+        if (docResult.success) {
+          verifiedCourses.push(docResult.data);
+          console.log(`✅ [CourseService] Verified course: ${course.id} - ${course.title}`);
+        } else {
+          console.log(`❌ [CourseService] Course not found in documents: ${course.id} - ${course.title}`);
+        }
+      }
+      
+      console.log(`📚 [CourseService] Verified courses: ${verifiedCourses.length}/${courses.length}`);
       
       // Sort by createdAt (newest first)
-      const sortedCourses = courses.sort((a, b) => {
-        const dateA = new Date(a.createdAt);
-        const dateB = new Date(b.createdAt);
+      const sortedCourses = verifiedCourses.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
         return dateB - dateA;
       });
+
+      console.log('📚 [CourseService] Sorted courses:', sortedCourses.map(c => ({ id: c.id, title: c.title, createdAt: c.createdAt })));
 
       return {
         success: true,
@@ -51,6 +83,31 @@ class CourseService {
       };
     } catch (error) {
       console.error('Error fetching courses:', error);
+      throw error;
+    }
+  }
+
+  // Debug function để kiểm tra tất cả documents trong collection
+  async debugCoursesCollection() {
+    try {
+      console.log('🔍 [CourseService] Debugging courses collection...');
+      
+      // Lấy tất cả documents từ collection
+      const courses = await this.firestore.getCollection('courses');
+      console.log('🔍 [CourseService] All courses in collection:', courses);
+      
+      // Kiểm tra từng course
+      for (const course of courses) {
+        console.log(`🔍 [CourseService] Course ID: ${course.id}, Title: ${course.title}`);
+        
+        // Thử get document bằng ID
+        const docResult = await this.firestore.getDocument('courses', course.id);
+        console.log(`🔍 [CourseService] Document result for ${course.id}:`, docResult);
+      }
+      
+      return courses;
+    } catch (error) {
+      console.error('Error debugging courses collection:', error);
       throw error;
     }
   }
@@ -92,12 +149,52 @@ class CourseService {
   // Cập nhật khóa học
   async updateCourse(courseId, updateData) {
     try {
+      console.log('🔄 [CourseService] updateCourse called with:', { courseId, updateData });
+      
+      // Kiểm tra course có tồn tại không
+      const existingCourse = await this.firestore.getDocument('courses', courseId);
+      console.log('🔍 [CourseService] Existing course check:', existingCourse);
+      
       const updatedData = {
         ...updateData,
         updatedAt: new Date().toISOString()
       };
 
-      await this.firestore.updateDocument('courses', courseId, updatedData);
+      if (!existingCourse.success) {
+        console.log('⚠️ [CourseService] Course not found, creating new course with ID:', courseId);
+        
+        // Tạo course mới với ID đã có
+        const newCourse = {
+          ...updateData,
+          id: courseId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lessons: updateData.lessons || [],
+          exams: updateData.exams || [],
+          enrolledStudents: updateData.enrolledStudents || 0,
+          rating: updateData.rating || 0,
+          status: updateData.status || 'active'
+        };
+
+        await this.firestore.createDocument('courses', newCourse, courseId);
+        console.log('✅ [CourseService] Created new course with ID:', courseId);
+        
+        // Verify course was created
+        const verifyResult = await this.firestore.getDocument('courses', courseId);
+        if (!verifyResult.success) {
+          throw new Error('Failed to create course - verification failed');
+        }
+      } else {
+        console.log('📝 [CourseService] Updating existing course with data:', updatedData);
+        await this.firestore.updateDocument('courses', courseId, updatedData);
+        console.log('✅ [CourseService] Updated existing course:', courseId);
+        
+        // Verify course was updated
+        const verifyResult = await this.firestore.getDocument('courses', courseId);
+        if (!verifyResult.success) {
+          throw new Error('Failed to update course - verification failed');
+        }
+      }
       
       return {
         success: true,
@@ -115,8 +212,16 @@ class CourseService {
       console.log('🗑️ [CourseService] Deleting course:', courseId);
       
       // Kiểm tra course có tồn tại không
-      const courseExists = await this.getCourseDataSafely(courseId);
-      console.log('🗑️ [CourseService] Course exists:', !!courseExists);
+      const courseExists = await this.firestore.getDocument('courses', courseId);
+      console.log('🗑️ [CourseService] Course exists:', courseExists.success);
+      
+      if (!courseExists.success) {
+        console.log('⚠️ [CourseService] Course not found in documents, considering deletion successful');
+        return {
+          success: true,
+          message: 'Course not found - considered deleted'
+        };
+      }
       
       // Xóa tất cả enrollments liên quan đến khóa học này
       try {
@@ -140,16 +245,16 @@ class CourseService {
       }
       
       // Xóa course document
-      try {
-        const deleteResult = await this.firestore.deleteDocument('courses', courseId);
-        console.log('🗑️ [CourseService] Delete document result:', deleteResult);
-      } catch (deleteError) {
-        console.warn('⚠️ [CourseService] Failed to delete course document:', deleteError.message);
-        // Có thể course chỉ tồn tại trong collection, không phải document riêng lẻ
-        console.log('🗑️ [CourseService] Course might only exist in collection, considering deletion successful');
+      console.log('🗑️ [CourseService] Deleting course document:', courseId);
+      await this.firestore.deleteDocument('courses', courseId);
+      
+      // Verify course was deleted
+      const verifyResult = await this.firestore.getDocument('courses', courseId);
+      if (verifyResult.success) {
+        throw new Error('Failed to delete course - still exists after deletion');
       }
       
-      console.log('✅ [CourseService] Course deletion process completed');
+      console.log('✅ [CourseService] Course deleted and verified:', courseId);
       
       return {
         success: true,

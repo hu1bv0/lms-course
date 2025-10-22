@@ -6,7 +6,9 @@ import {
   Save,
   Eye,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import {
@@ -18,6 +20,7 @@ import {
   getSubjectsByLevel,
   getEducationLevel
 } from '../../../constants/educationConstants';
+import { uploadImageToCloudinary } from '../../../configs/cloudinary.config';
 
 const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, isEdit = false }) => {
   const [activeTab, setActiveTab] = useState('basic');
@@ -38,13 +41,78 @@ const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, i
   });
 
   const [expandedSections, setExpandedSections] = useState(new Set(['basic']));
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
   // Load initial data for edit mode
   useEffect(() => {
     if (isEdit && initialData) {
       setCourseData(initialData);
+      if (initialData.thumbnail) {
+        setThumbnailPreview(initialData.thumbnail);
+      }
     }
   }, [isEdit, initialData]);
+
+  // Handle thumbnail file selection
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Vui lòng chọn file ảnh hợp lệ!', {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Kích thước file không được vượt quá 10MB!', {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      setThumbnailFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setThumbnailPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload thumbnail to Cloudinary
+  const uploadThumbnail = async () => {
+    if (!thumbnailFile) {
+      return courseData.thumbnail; // Return existing thumbnail if no new file
+    }
+
+    setIsUploadingThumbnail(true);
+    try {
+      const result = await uploadImageToCloudinary(thumbnailFile);
+      if (result.success) {
+        return result.url;
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error);
+      toast.error('Không thể upload ảnh đại diện!', {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      throw error;
+    } finally {
+      setIsUploadingThumbnail(false);
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (field, value) => {
@@ -85,7 +153,7 @@ const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, i
   };
 
   // Handle save
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate required fields
     if (!courseData.title || !courseData.grade || !courseData.subject) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc!', {
@@ -95,23 +163,32 @@ const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, i
       return;
     }
 
-    // Generate course ID
-    const courseId = `course_${Date.now()}`;
-    
-    const courseToSave = {
-      ...courseData,
-      id: courseId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lessons: [],
-      exams: [],
-      enrolledStudents: 0,
-      rating: 0,
-      status: 'active'
-    };
+    try {
+      // Upload thumbnail first
+      const thumbnailUrl = await uploadThumbnail();
+      
+      // Generate course ID
+      const courseId = `course_${Date.now()}`;
+      
+      const courseToSave = {
+        ...courseData,
+        thumbnail: thumbnailUrl,
+        id: courseId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lessons: [],
+        exams: [],
+        enrolledStudents: 0,
+        rating: 0,
+        status: 'active'
+      };
 
-    onSave(courseToSave);
-    resetForm();
+      onSave(courseToSave);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving course:', error);
+      // Error message already shown in uploadThumbnail
+    }
   };
 
   // Reset form
@@ -133,6 +210,9 @@ const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, i
     });
     setExpandedSections(new Set(['basic']));
     setActiveTab('basic');
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    setIsUploadingThumbnail(false);
   };
 
   // Close modal
@@ -462,26 +542,64 @@ const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, i
               {/* Thumbnail */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ảnh đại diện (URL)
+                  Ảnh đại diện
                 </label>
-                <input
-                  type="url"
-                  value={courseData.thumbnail}
-                  onChange={(e) => handleInputChange('thumbnail', e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {courseData.thumbnail && (
-                  <div className="mt-2">
-                    <img
-                      src={courseData.thumbnail}
-                      alt="Course thumbnail"
-                      className="w-32 h-20 object-cover rounded border"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
+                
+                {/* File Input */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleThumbnailChange}
+                    className="hidden"
+                    id="thumbnail-upload"
+                  />
+                  <label
+                    htmlFor="thumbnail-upload"
+                    className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    {thumbnailPreview ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={thumbnailPreview}
+                          alt="Thumbnail preview"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-gray-500">
+                        <ImageIcon className="w-8 h-8 mb-2" />
+                        <span className="text-sm">Chọn ảnh đại diện</span>
+                        <span className="text-xs text-gray-400">PNG, JPG, GIF (tối đa 10MB)</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* Upload Status */}
+                {isUploadingThumbnail && (
+                  <div className="mt-2 flex items-center text-sm text-blue-600">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    Đang upload ảnh...
                   </div>
+                )}
+
+                {/* Remove Button */}
+                {thumbnailPreview && !isUploadingThumbnail && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setThumbnailFile(null);
+                      setThumbnailPreview('');
+                      handleInputChange('thumbnail', '');
+                    }}
+                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Xóa ảnh
+                  </button>
                 )}
               </div>
             </div>
@@ -498,9 +616,17 @@ const CreateCourseModal = ({ isOpen, onClose, onSave, courseData: initialData, i
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            disabled={isUploadingThumbnail}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
-            {isEdit ? 'Cập nhật khóa học' : 'Tạo khóa học'}
+            {isUploadingThumbnail ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Đang upload...
+              </>
+            ) : (
+              isEdit ? 'Cập nhật khóa học' : 'Tạo khóa học'
+            )}
           </button>
         </div>
       </div>
