@@ -69,7 +69,6 @@ const CourseManagement = () => {
     try {
       const response = await courseService.getAllCourses();
       console.log('📚 [CourseManagement] Courses loaded:', response.courses?.length || 0);
-      console.log('📚 [CourseManagement] Course IDs:', response.courses?.map(c => ({ id: c.id, title: c.title })) || []);
       setCourses(response.courses || []);
     } catch (error) {
       console.error('❌ [CourseManagement] Error loading courses:', error);
@@ -77,7 +76,6 @@ const CourseManagement = () => {
         position: 'top-right',
         autoClose: 3000,
       });
-      // Fallback to empty array instead of mock data
       setCourses([]);
     } finally {
       setLoading(false);

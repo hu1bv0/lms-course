@@ -212,22 +212,35 @@ class FirestoreService {
    */
   async createDocument(collectionName, data, docId = null) {
     try {
+      console.log('createDocument called with:', { collectionName, docId, data });
+      
+      // Không ghi đè createdAt/updatedAt nếu đã có trong data
       const docData = {
         ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: data.createdAt || serverTimestamp(),
+        updatedAt: data.updatedAt || serverTimestamp()
       };
 
       let docRef;
       if (docId) {
         docRef = doc(this.db, collectionName, docId);
         await setDoc(docRef, docData);
+        console.log('Document created with custom ID:', docId);
       } else {
         docRef = await addDoc(collection(this.db, collectionName), docData);
+        console.log('Document created with auto ID:', docRef.id);
       }
 
+      // Verify document was created
+      const verifyDoc = await getDoc(docRef);
+      if (!verifyDoc.exists()) {
+        throw new Error('Document creation verification failed');
+      }
+
+      console.log('Document creation verified successfully');
       return { id: docRef.id, ...data };
     } catch (error) {
+      console.error('createDocument error:', error);
       throw this.handleError(error);
     }
   }
@@ -244,6 +257,8 @@ class FirestoreService {
       console.log('updateDocument called with:', { collectionName, docId, data });
       
       const docRef = doc(this.db, collectionName, docId);
+      
+      // Sử dụng setDoc với merge để đảm bảo document được tạo/cập nhật
       const updateData = {
         ...data,
         updatedAt: serverTimestamp()
@@ -251,7 +266,8 @@ class FirestoreService {
 
       console.log('updateData:', updateData);
       
-      await updateDoc(docRef, updateData);
+      // Sử dụng setDoc với merge: true thay vì updateDoc
+      await setDoc(docRef, updateData, { merge: true });
       return { success: true, id: docId };
     } catch (error) {
       console.error('updateDocument error:', error);
