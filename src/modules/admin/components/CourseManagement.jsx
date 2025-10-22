@@ -69,6 +69,7 @@ const CourseManagement = () => {
     try {
       const response = await courseService.getAllCourses();
       console.log('📚 [CourseManagement] Courses loaded:', response.courses?.length || 0);
+      console.log('📚 [CourseManagement] Course IDs:', response.courses?.map(c => ({ id: c.id, title: c.title })) || []);
       setCourses(response.courses || []);
     } catch (error) {
       console.error('❌ [CourseManagement] Error loading courses:', error);
@@ -158,6 +159,12 @@ const CourseManagement = () => {
     const course = courses.find(c => c.id === courseId);
     console.log('Found course:', course);
     
+    if (!course) {
+      console.error('❌ [CourseManagement] Course not found for ID:', courseId);
+      toast.error('Không tìm thấy khóa học. Vui lòng tải lại trang.');
+      return;
+    }
+    
     if (course) {
       setSelectedCourseForLesson({
         courseId: courseId,
@@ -195,10 +202,19 @@ const CourseManagement = () => {
       console.log('Calling addLessonToCourse with courseId:', selectedCourseForLesson.courseId);
       const response = await courseService.addLessonToCourse(selectedCourseForLesson.courseId, lessonData);
       if (response.success) {
+        console.log('✅ [handleSaveLesson] Lesson added, reloading courses...');
         // Reload courses from Firebase
         await loadCourses();
+        console.log('✅ [handleSaveLesson] Courses reloaded, closing modal');
         setIsCreateLessonModalOpen(false);
         setSelectedCourseForLesson(null);
+        
+        toast.success('Thêm bài học thành công!', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      } else {
+        throw new Error('Add lesson response indicates failure');
       }
     } catch (error) {
       console.error('Error saving lesson:', error);
@@ -224,9 +240,18 @@ const CourseManagement = () => {
       const response = await courseService.createCourse(courseData);
       console.log('Course created successfully:', response);
       if (response.success) {
+        console.log('✅ [handleSaveCourse] Course created, reloading courses...');
         // Reload courses from Firebase
         await loadCourses();
+        console.log('✅ [handleSaveCourse] Courses reloaded, closing modal');
         setIsCreateCourseModalOpen(false);
+        
+        toast.success('Tạo khóa học thành công!', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      } else {
+        throw new Error('Create course response indicates failure');
       }
     } catch (error) {
       console.error('Error saving course:', error);
@@ -241,7 +266,17 @@ const CourseManagement = () => {
 
   // Handle edit course
   const handleEditCourse = (courseId) => {
+    console.log('handleEditCourse called with courseId:', courseId);
+    
     const course = courses.find(c => c.id === courseId);
+    console.log('Found course for edit:', course);
+    
+    if (!course) {
+      console.error('❌ [CourseManagement] Course not found for edit ID:', courseId);
+      toast.error('Không tìm thấy khóa học. Vui lòng tải lại trang.');
+      return;
+    }
+    
     if (course) {
       setSelectedCourseForEdit(course);
       setIsEditCourseModalOpen(true);
@@ -256,10 +291,19 @@ const CourseManagement = () => {
       const response = await courseService.updateCourse(selectedCourseForEdit.id, courseData);
       console.log('Course updated successfully:', response);
       if (response.success) {
+        console.log('✅ [handleUpdateCourse] Course updated, reloading courses...');
         // Reload courses from Firebase
         await loadCourses();
+        console.log('✅ [handleUpdateCourse] Courses reloaded, closing modal');
         setIsEditCourseModalOpen(false);
         setSelectedCourseForEdit(null);
+        
+        toast.success('Cập nhật khóa học thành công!', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      } else {
+        throw new Error('Update course response indicates failure');
       }
     } catch (error) {
       console.error('Error updating course:', error);
@@ -274,10 +318,18 @@ const CourseManagement = () => {
 
   // Handle delete course
   const handleDeleteCourse = (courseId) => {
+    console.log('🗑️ [handleDeleteCourse] Called with courseId:', courseId);
+    console.log('🗑️ [handleDeleteCourse] Available courses:', courses.map(c => ({ id: c.id, title: c.title })));
+    
     const course = courses.find(c => c.id === courseId);
+    console.log('🗑️ [handleDeleteCourse] Found course:', course ? { id: course.id, title: course.title } : 'NOT FOUND');
+    
     if (course) {
       setSelectedCourseForDelete(course);
       setIsDeleteConfirmOpen(true);
+    } else {
+      console.error('❌ [handleDeleteCourse] Course not found for ID:', courseId);
+      toast.error('Không tìm thấy khóa học để xóa. Vui lòng tải lại trang.');
     }
   };
 
@@ -306,9 +358,14 @@ const CourseManagement = () => {
         await loadCourses();
         console.log('✅ [CourseManagement] Courses reloaded successfully');
         
-        // Close modal and reset state
+        // Close modal and reset ALL states
         setIsDeleteConfirmOpen(false);
         setSelectedCourseForDelete(null);
+        setSelectedCourse(null);
+        setSelectedCourseForLesson(null);
+        setSelectedCourseForExam(null);
+        
+        console.log('🧹 [CourseManagement] All selected states cleared after deletion');
       } else {
         throw new Error('Delete response indicates failure');
       }
@@ -379,7 +436,17 @@ const CourseManagement = () => {
 
   // Handle create exam
   const handleCreateExam = (courseId) => {
+    console.log('handleCreateExam called with courseId:', courseId);
+    
     const course = courses.find(c => c.id === courseId);
+    console.log('Found course for exam:', course);
+    
+    if (!course) {
+      console.error('❌ [CourseManagement] Course not found for exam ID:', courseId);
+      toast.error('Không tìm thấy khóa học. Vui lòng tải lại trang.');
+      return;
+    }
+    
     if (course) {
       setSelectedCourseForExam({
         courseId: courseId,
@@ -622,7 +689,14 @@ const CourseManagement = () => {
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {filteredCourses.map((course) => (
+            {(() => {
+              console.log('📋 [UI] Rendering courses:', {
+                totalCourses: courses.length,
+                filteredCourses: filteredCourses.length,
+                courseIds: filteredCourses.map(c => ({ id: c.id, title: c.title }))
+              });
+              return filteredCourses;
+            })().map((course) => (
               <div key={course.id} className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -773,7 +847,14 @@ const CourseManagement = () => {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => handleDeleteCourse(course.id)}
+                      onClick={() => {
+                        console.log('🗑️ [UI] Delete button clicked for course:', {
+                          id: course.id,
+                          title: course.title,
+                          fullCourse: course
+                        });
+                        handleDeleteCourse(course.id);
+                      }}
                       className="text-red-600 hover:text-red-800 p-2"
                       title="Xóa khóa học"
                     >
