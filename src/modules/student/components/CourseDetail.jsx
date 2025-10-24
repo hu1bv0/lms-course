@@ -97,6 +97,56 @@ const CourseDetail = () => {
           console.log('Setting completed lessons:', progressResult.completedLessons);
           setCompletedLessons(new Set(progressResult.completedLessons || []));
           setCompletedExams(new Set(progressResult.completedExams || []));
+          
+          // Load completed parts for all lessons
+          if (courseData?.lessons) {
+            console.log('🔄 [CourseDetail] Loading completed parts for all lessons...');
+            const initialCompletedParts = new Map();
+            
+            for (const lesson of courseData.lessons) {
+              try {
+                const partsResult = await courseService.getCompletedParts(studentId, courseId, lesson.id);
+                if (partsResult.success) {
+                  initialCompletedParts.set(lesson.id, partsResult.completedParts);
+                  console.log(`✅ [CourseDetail] Loaded parts for lesson ${lesson.title}:`, Array.from(partsResult.completedParts));
+                }
+              } catch (error) {
+                console.error(`❌ [CourseDetail] Error loading parts for lesson ${lesson.id}:`, error);
+              }
+            }
+            
+            setCompletedParts(initialCompletedParts);
+            console.log('🗺️ [CourseDetail] Initial completedParts map:', {
+              totalLessons: initialCompletedParts.size,
+              lessonIds: Array.from(initialCompletedParts.keys())
+            });
+            
+            // Check and sync lesson completion after loading all data
+            setTimeout(async () => {
+              // First cleanup any duplicate data
+              try {
+                const duplicateResult = await courseService.cleanupDuplicatePartCompletions(studentId, courseId);
+                if (duplicateResult.cleanedCount > 0) {
+                  console.log('🧹 [CourseDetail] Auto-cleaned duplicates:', duplicateResult.cleanedCount);
+                  toast.info(`Đã tự động dọn dẹp ${duplicateResult.cleanedCount} dữ liệu trùng lặp`, {
+                    position: "top-right",
+                    autoClose: 3000,
+                  });
+                }
+              } catch (error) {
+                console.error('❌ [CourseDetail] Error auto-cleaning duplicates:', error);
+              }
+              
+              // Then check and sync lesson completion (delay to ensure completedParts is loaded)
+              setTimeout(() => {
+                try {
+                  checkAndSyncLessonCompletion(courseData, progressResult.completedLessons || [], initialCompletedParts);
+                } catch (error) {
+                  console.error('❌ [CourseDetail] Error calling checkAndSyncLessonCompletion:', error);
+                }
+              }, 2000);
+            }, 1000);
+          }
         }
 
         // Load student rating
@@ -124,20 +174,50 @@ const CourseDetail = () => {
   const loadCompletedParts = useCallback(async (lessonId) => {
     if (!studentId || !courseId) return;
     try {
+      console.log('🔄 [CourseDetail] loadCompletedParts called:', { lessonId, studentId, courseId });
+      
       const result = await courseService.getCompletedParts(studentId, courseId, lessonId);
+      console.log('📋 [CourseDetail] getCompletedParts result:', result);
+      
       if (result.success) {
+        console.log('✅ [CourseDetail] Setting completedParts for lesson:', {
+          lessonId,
+          completedParts: Array.from(result.completedParts)
+        });
+        
+        // Show notification if auto-cleanup occurred
+        if (result.autoCleaned && result.cleanedCount > 0) {
+          toast.info(`Đã tự động dọn dẹp ${result.cleanedCount} dữ liệu không nhất quán`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        }
+        
         setCompletedParts(prev => {
           const newMap = new Map(prev);
           newMap.set(lessonId, result.completedParts);
+          console.log('🗺️ [CourseDetail] Updated completedParts map:', {
+            lessonId,
+            newParts: Array.from(result.completedParts),
+            allLessons: Array.from(newMap.keys())
+          });
           return newMap;
         });
       }
     } catch (error) {
-      console.error('Error loading completed parts:', error);
+      console.error('❌ [CourseDetail] Error loading completed parts:', error);
     }
   }, [studentId, courseId]);
 
   const handleStartLesson = (lessonIndex) => {
+    console.log('🎯 [CourseDetail] handleStartLesson called:', {
+      lessonIndex,
+      lessonId: course.lessons[lessonIndex].id,
+      lessonTitle: course.lessons[lessonIndex].title,
+      completedLessons: Array.from(completedLessons),
+      isLessonCompleted: completedLessons.has(course.lessons[lessonIndex].id)
+    });
+    
     setCurrentLessonIndex(lessonIndex);
     setCurrentView('lesson');
     
@@ -150,56 +230,136 @@ const CourseDetail = () => {
   useEffect(() => {
     if (currentView === 'lesson' && course?.lessons?.[currentLessonIndex]) {
       const lessonId = course.lessons[currentLessonIndex].id;
+      console.log('🔄 [CourseDetail] Loading completed parts for lesson:', {
+        lessonId,
+        lessonTitle: course.lessons[currentLessonIndex].title,
+        isCompleted: completedLessons.has(lessonId)
+      });
       loadCompletedParts(lessonId);
     }
-  }, [currentView, currentLessonIndex, course, loadCompletedParts]);
+  }, [currentView, currentLessonIndex, course, loadCompletedParts, completedLessons]);
 
   const handleStartExam = (examIndex) => {
     setCurrentExamIndex(examIndex);
     setCurrentView('exam');
   };
 
+  // Function to reload progress data
+  const reloadProgress = useCallback(async () => {
+    if (!studentId || !courseId) return;
+    
+    try {
+      console.log('🔄 [CourseDetail] Reloading progress data...');
+      const progressResult = await courseService.getStudentProgress(studentId, courseId);
+      console.log('📊 [CourseDetail] Progress reload result:', progressResult);
+      
+      if (progressResult.success) {
+        const newCompletedLessons = new Set(progressResult.completedLessons || []);
+        const newCompletedExams = new Set(progressResult.completedExams || []);
+        
+        console.log('✅ [CourseDetail] Updated progress state:', {
+          completedLessons: Array.from(newCompletedLessons),
+          completedExams: Array.from(newCompletedExams)
+        });
+        
+        setCompletedLessons(newCompletedLessons);
+        setCompletedExams(newCompletedExams);
+        
+        // Reload completed parts for all lessons
+        if (course?.lessons) {
+          console.log('🔄 [CourseDetail] Reloading completed parts for all lessons...');
+          const newCompletedParts = new Map();
+          
+          for (const lesson of course.lessons) {
+            try {
+              const partsResult = await courseService.getCompletedParts(studentId, courseId, lesson.id);
+              if (partsResult.success) {
+                newCompletedParts.set(lesson.id, partsResult.completedParts);
+                console.log(`✅ [CourseDetail] Loaded parts for lesson ${lesson.title}:`, Array.from(partsResult.completedParts));
+              }
+            } catch (error) {
+              console.error(`❌ [CourseDetail] Error loading parts for lesson ${lesson.id}:`, error);
+            }
+          }
+          
+          setCompletedParts(newCompletedParts);
+          console.log('🗺️ [CourseDetail] Updated completedParts map:', {
+            totalLessons: newCompletedParts.size,
+            lessonIds: Array.from(newCompletedParts.keys())
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ [CourseDetail] Error reloading progress:', error);
+    }
+  }, [studentId, courseId, course]);
+
+  // Function to check and sync lesson completion based on completed parts
+  const checkAndSyncLessonCompletion = useCallback(async (courseDataParam = null, completedLessonsParam = null, completedPartsParam = null) => {
+    const courseToUse = courseDataParam || course;
+    const completedLessonsToUse = completedLessonsParam ? new Set(completedLessonsParam) : completedLessons;
+    const completedPartsToUse = completedPartsParam || completedParts;
+    
+    if (!courseToUse?.lessons) {
+      return;
+    }
+    let hasChanges = false;
+    
+    for (const lesson of courseToUse.lessons) {
+      const lessonCompletedParts = completedPartsToUse.get(lesson.id) || new Set();
+      const isLessonCompleted = completedLessonsToUse.has(lesson.id);
+      const allPartsCompleted = lesson.parts?.every((_, index) => lessonCompletedParts.has(index)) || false;
+      
+      // If all parts are completed but lesson is not marked as completed
+      if (allPartsCompleted && !isLessonCompleted) {
+        try {
+          const result = await courseService.updateProgress(studentId, courseId, lesson.id, 100);
+          if (result.success) {
+            hasChanges = true;
+          }
+        } catch (error) {
+          console.error(`❌ [CourseDetail] Error auto-completing lesson ${lesson.title}:`, error);
+        }
+      }
+    }
+    
+    // Reload progress after sync if there were changes
+    if (hasChanges) {
+      await reloadProgress();
+    }
+  }, [course, completedParts, completedLessons, studentId, courseId, reloadProgress]);
+
   const handleLessonComplete = async (lessonId) => {
     try {
-      console.log('handleLessonComplete called with lessonId:', lessonId);
+      console.log('🎯 [CourseDetail] handleLessonComplete called with lessonId:', lessonId);
       
-      // Kiểm tra xem lesson đã completed chưa
+      // Check if lesson is already completed to avoid duplicate calls
       if (completedLessons.has(lessonId)) {
-        console.log('Lesson already completed:', lessonId);
-        toast.info('Bài học đã hoàn thành!', {
-          position: "top-right",
-          autoClose: 2000,
-        });
+        console.log('⚠️ [CourseDetail] Lesson already completed, skipping:', lessonId);
         return;
       }
       
-      console.log('Updating progress for lesson:', lessonId);
+      // Always update progress - don't check if already completed
+      // because this function is called when all parts are completed
+      console.log('📝 [CourseDetail] Updating progress for lesson:', lessonId);
       const result = await courseService.updateProgress(studentId, courseId, lessonId, 100);
+      
       if (result.success) {
-        console.log('Lesson completed successfully:', lessonId);
-        setCompletedLessons(prev => {
-          const newSet = new Set([...prev, lessonId]);
-          console.log('Updated completedLessons:', Array.from(newSet));
-          return newSet;
-        });
+        console.log('✅ [CourseDetail] Lesson completed successfully:', lessonId);
         
         // Reload progress to ensure UI is in sync
-        const progressResult = await courseService.getStudentProgress(studentId, courseId);
-        if (progressResult.success) {
-          setCompletedLessons(new Set(progressResult.completedLessons || []));
-          setCompletedExams(new Set(progressResult.completedExams || []));
-        }
+        await reloadProgress();
         
         toast.success('Hoàn thành bài học!', {
           position: "top-right",
           autoClose: 2000,
         });
       } else {
-        console.error('Failed to update progress:', result);
+        console.error('❌ [CourseDetail] Failed to update progress:', result);
         toast.error('Có lỗi xảy ra khi cập nhật tiến độ');
       }
     } catch (error) {
-      console.error('Error updating progress:', error);
+      console.error('❌ [CourseDetail] Error updating progress:', error);
       toast.error('Có lỗi xảy ra khi cập nhật tiến độ');
     }
   };
@@ -220,6 +380,8 @@ const CourseDetail = () => {
 
   const handleBackToOverview = () => {
     setCurrentView('overview');
+    // Reload progress when returning to overview to ensure UI is in sync
+    reloadProgress();
   };
 
   const getDifficultyText = (difficulty) => {
@@ -245,6 +407,45 @@ const CourseDetail = () => {
     } catch (error) {
       console.error('Error submitting rating:', error);
       throw error;
+    }
+  };
+
+  // Clean up inconsistent data
+  const handleCleanupData = async () => {
+    try {
+      console.log('🧹 [CourseDetail] Starting comprehensive data cleanup...');
+      
+      // First cleanup duplicates
+      const duplicateResult = await courseService.cleanupDuplicatePartCompletions(studentId, courseId);
+      console.log('🔄 [CourseDetail] Duplicate cleanup result:', duplicateResult);
+      
+      // Then cleanup inconsistent data
+      const inconsistentResult = await courseService.cleanupInconsistentPartCompletions(studentId, courseId);
+      console.log('🔄 [CourseDetail] Inconsistent cleanup result:', inconsistentResult);
+      
+      const totalCleaned = (duplicateResult.cleanedCount || 0) + (inconsistentResult.cleanedCount || 0);
+      
+      if (totalCleaned > 0) {
+        console.log('✅ [CourseDetail] Cleanup completed:', `Cleaned ${totalCleaned} items`);
+        toast.success(`Đã dọn dẹp ${totalCleaned} dữ liệu không nhất quán`, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        
+        // Reload course data
+        await loadCourse();
+      } else {
+        toast.info('Không có dữ liệu cần dọn dẹp', {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      }
+    } catch (error) {
+      console.error('❌ [CourseDetail] Error during cleanup:', error);
+      toast.error('Có lỗi xảy ra khi dọn dẹp dữ liệu', {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -279,11 +480,28 @@ const CourseDetail = () => {
 
   // Render different views
   if (currentView === 'lesson') {
+    const currentLesson = course.lessons[currentLessonIndex];
+    const isLessonCompleted = completedLessons.has(currentLesson.id);
+    const lessonCompletedParts = completedParts.get(currentLesson.id) || new Set();
+    
+    console.log('🎬 [CourseDetail] Rendering LessonViewer with props:', {
+      lessonId: currentLesson.id,
+      lessonTitle: currentLesson.title,
+      isCompleted: isLessonCompleted,
+      completedParts: Array.from(lessonCompletedParts),
+      completedLessons: Array.from(completedLessons),
+      allCompletedParts: Array.from(completedParts.keys()),
+      totalParts: currentLesson.parts?.length || 0,
+      allPartsCompleted: currentLesson.parts?.every((_, index) => lessonCompletedParts.has(index)) || false,
+      lessonPartsData: currentLesson.parts,
+      progressPercentage: currentLesson.parts?.length ? (lessonCompletedParts.size / currentLesson.parts.length) * 100 : 0
+    });
+    
     return (
       <LessonViewer
-        lesson={course.lessons[currentLessonIndex]}
+        lesson={currentLesson}
         courseId={courseId}
-        onComplete={() => handleLessonComplete(course.lessons[currentLessonIndex].id)}
+        onComplete={() => handleLessonComplete(currentLesson.id)}
         onNext={() => {
           if (currentLessonIndex < course.lessons.length - 1) {
             setCurrentLessonIndex(currentLessonIndex + 1);
@@ -299,8 +517,8 @@ const CourseDetail = () => {
           }
         }}
         onExit={handleBackToOverview}
-        isCompleted={completedLessons.has(course.lessons[currentLessonIndex].id)}
-        completedParts={completedParts.get(course.lessons[currentLessonIndex].id) || new Set()}
+        isCompleted={isLessonCompleted}
+        completedParts={lessonCompletedParts}
       />
     );
   }
@@ -424,33 +642,38 @@ const CourseDetail = () => {
               
               {course.lessons?.length > 0 ? (
                 <div className="space-y-3">
-                  {course.lessons.map((lesson, index) => (
-                    <div key={lesson.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {completedLessons.has(lesson.id) ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : (
-                            <Circle className="w-5 h-5 text-gray-400" />
-                          )}
-                          <div>
-                            <h4 className="font-medium text-gray-900">{lesson.title}</h4>
-                            <p className="text-sm text-gray-600">
-                              {lesson.parts?.length || 0} phần • {lesson.duration} phút
-                            </p>
+                  {course.lessons.map((lesson, index) => {
+                    const isLessonCompleted = completedLessons.has(lesson.id);
+                    console.log(`📚 [CourseDetail] Lesson ${index}: ${lesson.title} - Completed: ${isLessonCompleted}`);
+                    
+                    return (
+                      <div key={lesson.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {isLessonCompleted ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-gray-400" />
+                            )}
+                            <div>
+                              <h4 className="font-medium text-gray-900">{lesson.title}</h4>
+                              <p className="text-sm text-gray-600">
+                                {lesson.parts?.length || 0} phần • {lesson.duration} phút
+                              </p>
+                            </div>
                           </div>
+                          
+                          <button
+                            onClick={() => handleStartLesson(index)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                          >
+                            <Play className="w-4 h-4" />
+                            {isLessonCompleted ? 'Xem lại' : 'Bắt đầu'}
+                          </button>
                         </div>
-                        
-                        <button
-                          onClick={() => handleStartLesson(index)}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                        >
-                          <Play className="w-4 h-4" />
-                          {completedLessons.has(lesson.id) ? 'Xem lại' : 'Bắt đầu'}
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">

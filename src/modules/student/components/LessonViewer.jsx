@@ -28,26 +28,42 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
   const currentPart = lesson?.parts?.[currentPartIndex];
   
   // Debug log for UI state
-  console.log('LessonViewer render - completedParts:', Array.from(completedParts));
-  console.log('LessonViewer render - isCompleted:', isCompleted);
-  console.log('LessonViewer render - currentPartIndex:', currentPartIndex);
+  console.log('🎬 [LessonViewer] Render debug:', {
+    lessonId: lesson?.id,
+    lessonTitle: lesson?.title,
+    completedParts: Array.from(completedParts),
+    isCompleted,
+    currentPartIndex,
+    totalParts: lesson?.parts?.length || 0,
+    partsData: lesson?.parts,
+    progressPercentage: lesson?.parts?.length ? (completedParts.size / lesson.parts.length) * 100 : 0
+  });
 
   // Sync completed parts with parent when they change
   useEffect(() => {
-    // Only update local state when parent prop changes and we don't have local changes
-    if (initialCompletedParts.size > completedParts.size) {
-      console.log('Syncing completedParts from parent:', Array.from(initialCompletedParts));
-      setCompletedParts(initialCompletedParts);
-    }
-  }, [initialCompletedParts]);
+    console.log('🔄 [LessonViewer] Syncing with parent props:', {
+      initialCompletedParts: Array.from(initialCompletedParts),
+      currentCompletedParts: Array.from(completedParts),
+      isCompleted,
+      lessonId: lesson?.id
+    });
+    
+    // Always sync with parent data to ensure consistency
+    setCompletedParts(initialCompletedParts);
+  }, [initialCompletedParts, isCompleted, lesson?.id]);
 
   // Mark part as completed
   const markPartCompleted = async (partIndex) => {
-    console.log('Current completedParts state:', Array.from(completedParts));
-    console.log('Current partIndex:', partIndex);
+    console.log('🎯 [LessonViewer] markPartCompleted called:', {
+      partIndex,
+      currentCompletedParts: Array.from(completedParts),
+      isCompleted,
+      lessonId: lesson?.id
+    });
     
     // Nếu lesson đã hoàn thành, không cho phép mark lại
     if (isCompleted) {
+      console.log('⚠️ [LessonViewer] Lesson already completed, skipping');
       toast.info('Bài học đã hoàn thành!', {
         position: "top-right",
         autoClose: 2000,
@@ -57,6 +73,7 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
     
     // Nếu phần này đã hoàn thành, không cho phép mark lại
     if (completedParts.has(partIndex)) {
+      console.log('⚠️ [LessonViewer] Part already completed, skipping');
       toast.info('Phần này đã hoàn thành!', {
         position: "top-right",
         autoClose: 2000,
@@ -81,19 +98,26 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
       // Mark phần này là completed
       setCompletedParts(prev => {
         const newSet = new Set([...prev, partIndex]);
-        console.log('Previous completedParts:', Array.from(prev));
-        console.log('New completedParts:', Array.from(newSet));
+        console.log('📝 [LessonViewer] Updating completedParts:', {
+          previous: Array.from(prev),
+          new: Array.from(newSet),
+          partIndex
+        });
         
         // Check if all parts are completed with the new set
         const allPartsCompleted = lesson.parts.every((_, index) => newSet.has(index));
-        console.log('All parts completed:', allPartsCompleted, 'Total parts:', lesson.parts.length);
+        console.log('🔍 [LessonViewer] Checking completion:', {
+          allPartsCompleted,
+          totalParts: lesson.parts.length,
+          completedParts: Array.from(newSet)
+        });
         
-        if (allPartsCompleted) {
+        if (allPartsCompleted && !isCompleted) {
           // All parts completed, now complete the entire lesson
-          console.log('All parts completed, calling onComplete...');
+          console.log('🎉 [LessonViewer] All parts completed, calling onComplete...');
           setTimeout(async () => {
-            if (onComplete) {
-              console.log('Calling onComplete callback');
+            if (onComplete && !isCompleted) {
+              console.log('📞 [LessonViewer] Calling onComplete callback');
               await onComplete();
               toast.success('Chúc mừng! Bạn đã hoàn thành toàn bộ bài học!', {
                 position: "top-right",

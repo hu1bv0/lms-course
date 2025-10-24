@@ -429,12 +429,44 @@ class CourseService {
 
       const enrollment = enrollmentResult.data;
 
+      // Handle different data structures for completedLessons
+      let completedLessons = [];
+      if (Array.isArray(enrollment.completedLessons)) {
+        completedLessons = enrollment.completedLessons;
+      } else if (typeof enrollment.completedLessons === 'number' && enrollment.completedLessons > 0) {
+        // Migration case: if it's a number > 0, we need to get actual completed lessons
+        // from lesson_completions collection to preserve data
+        console.log('🔄 [CourseService] Migrating from number to array, fetching actual completions...');
+        
+        const lessonCompletionsResult = await this.firestore.getCollection('lesson_completions');
+        let lessonCompletions = [];
+        
+        if (Array.isArray(lessonCompletionsResult)) {
+          lessonCompletions = lessonCompletionsResult;
+        } else if (lessonCompletionsResult?.success && Array.isArray(lessonCompletionsResult.data)) {
+          lessonCompletions = lessonCompletionsResult.data;
+        }
+
+        // Get actual completed lessons for this student and course
+        const studentLessonCompletions = lessonCompletions.filter(lc => 
+          lc.studentId === studentId && lc.courseId === courseId
+        );
+        
+        completedLessons = studentLessonCompletions.map(lc => lc.lessonId);
+        
+        // Update enrollment with correct array format
+        if (completedLessons.length > 0) {
+          console.log('✅ [CourseService] Updating enrollment with migrated data:', completedLessons);
+          await this.firestore.updateDocument('enrollments', enrollmentId, {
+            completedLessons: completedLessons
+          });
+        }
+      }
+
       return {
         success: true,
         progress: enrollment.progress,
-        completedLessons: Array.isArray(enrollment.completedLessons) 
-          ? enrollment.completedLessons 
-          : (typeof enrollment.completedLessons === 'number' ? [] : []),
+        completedLessons: completedLessons,
         completedExams: enrollment.completedExams || [],
         lastAccessedAt: enrollment.lastAccessedAt
       };
@@ -531,29 +563,36 @@ class CourseService {
   // Tạo certificate khi hoàn thành khóa học
   async createCourseCertificate(studentId, courseId, courseTitle) {
     try {
+      // Ensure courseTitle is not undefined
+      const safeCourseTitle = courseTitle || 'Khóa học';
+      console.log('🏆 [CourseService] Creating course certificate for:', { studentId, courseId, courseTitle: safeCourseTitle });
+      
       const certificateId = `${studentId}_course_${courseId}_${Date.now()}`;
       const certificateData = {
         id: certificateId,
         studentId,
         courseId,
-        courseTitle,
+        courseTitle: safeCourseTitle,
         type: 'course_completion',
-        title: `Chứng chỉ hoàn thành khóa học "${courseTitle}"`,
-        description: `Bạn đã hoàn thành thành công khóa học "${courseTitle}"`,
+        title: `Chứng chỉ hoàn thành khóa học "${safeCourseTitle}"`,
+        description: `Bạn đã hoàn thành thành công khóa học "${safeCourseTitle}"`,
         earnedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: 'active'
       };
 
-      await this.firestore.createDocument('certificates', certificateData, certificateId);
+      console.log('📝 [CourseService] Certificate data:', certificateData);
+      
+      const result = await this.firestore.createDocument('certificates', certificateData, certificateId);
+      console.log('✅ [CourseService] Certificate created successfully:', result);
       
       return {
         success: true,
         certificate: certificateData
       };
     } catch (error) {
-      console.error('Error creating course certificate:', error);
+      console.error('❌ [CourseService] Error creating course certificate:', error);
       throw error;
     }
   }
@@ -561,6 +600,8 @@ class CourseService {
   // Tạo certificate khi hoàn thành bài thi
   async createExamCertificate(studentId, courseId, examId, examTitle, score) {
     try {
+      console.log('🏆 [CourseService] Creating exam certificate for:', { studentId, courseId, examId, examTitle, score });
+      
       const certificateId = `${studentId}_exam_${examId}_${Date.now()}`;
       const certificateData = {
         id: certificateId,
@@ -578,14 +619,17 @@ class CourseService {
         status: 'active'
       };
 
-      await this.firestore.createDocument('certificates', certificateData, certificateId);
+      console.log('📝 [CourseService] Exam certificate data:', certificateData);
+      
+      const result = await this.firestore.createDocument('certificates', certificateData, certificateId);
+      console.log('✅ [CourseService] Exam certificate created successfully:', result);
       
       return {
         success: true,
         certificate: certificateData
       };
     } catch (error) {
-      console.error('Error creating exam certificate:', error);
+      console.error('❌ [CourseService] Error creating exam certificate:', error);
       throw error;
     }
   }
@@ -609,27 +653,60 @@ class CourseService {
   // Lấy achievements của student
   async getStudentAchievements(studentId) {
     try {
-      const certificates = await this.firestore.getCollection('certificates');
-      const studentCertificates = certificates.filter(cert => cert.studentId === studentId);
+      console.log('🔍 [CourseService] Getting achievements for student:', studentId);
+      
+      const certificatesResult = await this.firestore.getCollection('certificates');
+      console.log('📜 [CourseService] Raw certificates result:', certificatesResult);
+      
+      // Handle different return formats from getCollection
+      let certificates = [];
+      if (Array.isArray(certificatesResult)) {
+        certificates = certificatesResult;
+      } else if (certificatesResult?.success && Array.isArray(certificatesResult.data)) {
+        certificates = certificatesResult.data;
+      } else if (certificatesResult && typeof certificatesResult === 'object') {
+        // If it's an object but not the expected format, try to extract data
+        certificates = Object.values(certificatesResult).filter(item => 
+          item && typeof item === 'object' && item.studentId
+        );
+      }
+      
+      console.log('📋 [CourseService] Processed certificates:', certificates.length);
+      
+      const studentCertificates = certificates.filter(cert => 
+        cert.studentId === studentId
+      );
+      
+      console.log('🎯 [CourseService] Student certificates found:', studentCertificates.length);
       
       // Convert certificates to achievements format
       const achievements = studentCertificates.map(cert => ({
         id: cert.id,
-        title: cert.title,
-        description: cert.description,
-        type: cert.type,
+        title: cert.title || 'Thành tích',
+        description: cert.description || '',
+        type: cert.type || 'general',
         earned: true,
-        date: cert.earnedAt,
+        date: cert.earnedAt || cert.createdAt,
+        earnedAt: cert.earnedAt || cert.createdAt,
+        courseTitle: cert.courseTitle || '',
+        examTitle: cert.examTitle || '',
+        score: cert.score || null,
         certificate: cert
       }));
+      
+      console.log('🏆 [CourseService] Final achievements:', achievements.length);
       
       return {
         success: true,
         achievements
       };
     } catch (error) {
-      console.error('Error getting student achievements:', error);
-      throw error;
+      console.error('❌ [CourseService] Error getting student achievements:', error);
+      return {
+        success: false,
+        error: error.message,
+        achievements: []
+      };
     }
   }
 
@@ -672,11 +749,23 @@ class CourseService {
 
       // Tạo certificate khi hoàn thành bài thi (chỉ tạo 1 lần)
       try {
+        console.log('🔍 [CourseService] Checking for exam certificate creation...');
         const course = await this.firestore.getDocument('courses', courseId);
         const exam = course?.exams?.find(exam => exam.id === examId);
+        
         if (exam) {
+          console.log('📋 [CourseService] Found exam:', exam.title);
+          
           // Kiểm tra xem đã có certificate cho bài thi này chưa
-          const certificates = await this.firestore.getCollection('certificates');
+          const certificatesResult = await this.firestore.getCollection('certificates');
+          let certificates = [];
+          
+          if (Array.isArray(certificatesResult)) {
+            certificates = certificatesResult;
+          } else if (certificatesResult?.success && Array.isArray(certificatesResult.data)) {
+            certificates = certificatesResult.data;
+          }
+          
           const existingCert = certificates.find(cert => 
             cert.studentId === studentId && 
             cert.courseId === courseId && 
@@ -685,11 +774,16 @@ class CourseService {
           );
           
           if (!existingCert) {
+            console.log('🏆 [CourseService] Creating new exam certificate...');
             await this.createExamCertificate(studentId, courseId, examId, exam.title, score);
+          } else {
+            console.log('✅ [CourseService] Exam certificate already exists, skipping creation');
           }
+        } else {
+          console.log('⚠️ [CourseService] Exam not found in course');
         }
       } catch (certError) {
-        console.error('Error creating exam certificate:', certError);
+        console.error('❌ [CourseService] Error creating exam certificate:', certError);
         // Không throw error để không ảnh hưởng đến exam result
       }
 
@@ -925,17 +1019,25 @@ class CourseService {
         throw new Error('Enrollment not found');
       }
 
-      // Lấy danh sách lesson đã hoàn thành hiện tại
-      const completedLessons = Array.isArray(enrollment.completedLessons) 
-        ? enrollment.completedLessons 
-        : (typeof enrollment.completedLessons === 'number' ? [] : []);
+      // Always reload completedLessons from database to ensure accuracy
+      console.log('🔄 [CourseService] Reloading completedLessons from database...');
       
-      // Migrate enrollment data nếu cần (từ số sang array)
-      if (typeof enrollment.completedLessons === 'number' && enrollment.completedLessons > 0) {
-        console.log('Migrating enrollment data from number to array');
-        // Nếu có completedLessons là số > 0, có thể có lesson đã hoàn thành
-        // Nhưng không biết lesson nào, nên chỉ thêm lesson hiện tại
+      const lessonCompletionsResult = await this.firestore.getCollection('lesson_completions');
+      let lessonCompletions = [];
+      
+      if (Array.isArray(lessonCompletionsResult)) {
+        lessonCompletions = lessonCompletionsResult;
+      } else if (lessonCompletionsResult?.success && Array.isArray(lessonCompletionsResult.data)) {
+        lessonCompletions = lessonCompletionsResult.data;
       }
+
+      // Get actual completed lessons for this student and course
+      const studentLessonCompletions = lessonCompletions.filter(lc => 
+        lc.studentId === studentId && lc.courseId === courseId
+      );
+      
+      let completedLessons = studentLessonCompletions.map(lc => lc.lessonId);
+      console.log('✅ [CourseService] Reloaded completedLessons from database:', completedLessons);
       
       // Thêm lesson hiện tại vào danh sách nếu chưa có
       if (!completedLessons.includes(lessonId)) {
@@ -975,10 +1077,24 @@ class CourseService {
       // Tạo certificate khi hoàn thành khóa học (100% progress) - chỉ tạo 1 lần
       if (updatedProgress >= 100) {
         try {
+          console.log('🔍 [CourseService] Checking for course completion certificate...');
           const course = await this.firestore.getDocument('courses', courseId);
+          
           if (course) {
+            // Handle different course data structures
+            let courseTitle = course.title || course.data?.title || 'Khóa học';
+            console.log('📋 [CourseService] Found course:', courseTitle);
+            
             // Kiểm tra xem đã có certificate cho khóa học này chưa
-            const certificates = await this.firestore.getCollection('certificates');
+            const certificatesResult = await this.firestore.getCollection('certificates');
+            let certificates = [];
+            
+            if (Array.isArray(certificatesResult)) {
+              certificates = certificatesResult;
+            } else if (certificatesResult?.success && Array.isArray(certificatesResult.data)) {
+              certificates = certificatesResult.data;
+            }
+            
             const existingCert = certificates.find(cert => 
               cert.studentId === studentId && 
               cert.courseId === courseId && 
@@ -986,11 +1102,16 @@ class CourseService {
             );
             
             if (!existingCert) {
-              await this.createCourseCertificate(studentId, courseId, course.title);
+              console.log('🏆 [CourseService] Creating new course completion certificate...');
+              await this.createCourseCertificate(studentId, courseId, courseTitle);
+            } else {
+              console.log('✅ [CourseService] Course completion certificate already exists, skipping creation');
             }
+          } else {
+            console.log('⚠️ [CourseService] Course not found');
           }
         } catch (certError) {
-          console.error('Error creating course certificate:', certError);
+          console.error('❌ [CourseService] Error creating course certificate:', certError);
           // Không throw error để không ảnh hưởng đến progress update
         }
       }
@@ -1243,6 +1364,8 @@ class CourseService {
   // Get completed parts for a specific lesson
   async getCompletedParts(studentId, courseId, lessonId) {
     try {
+      console.log('🔍 [CourseService] Getting completed parts:', { studentId, courseId, lessonId });
+      
       // First check if lesson is fully completed
       const enrollmentResult = await this.firestore.getCollection('enrollments');
       let enrollments = [];
@@ -1257,41 +1380,16 @@ class CourseService {
         e.studentId === studentId && e.courseId === courseId
       );
 
-      if (studentEnrollment && studentEnrollment.completedLessons?.includes(lessonId)) {
-        // Lesson is completed, get course to know how many parts there are
-        const courseResult = await this.firestore.getDocument('courses', courseId);
-        let course;
-        if (courseResult && typeof courseResult === 'object') {
-          if (courseResult.success !== undefined) {
-            if (!courseResult.success) {
-              return { success: false, completedParts: new Set() };
-            }
-            course = courseResult.data;
-          } else {
-            course = courseResult;
-          }
-        } else {
-          return { success: false, completedParts: new Set() };
-        }
+      console.log('📋 [CourseService] Student enrollment:', {
+        found: !!studentEnrollment,
+        completedLessons: studentEnrollment?.completedLessons,
+        includesLesson: studentEnrollment?.completedLessons?.includes(lessonId)
+      });
 
-        const lesson = course.lessons?.find(l => l.id === lessonId);
-        if (!lesson || !lesson.parts) {
-          return { success: false, completedParts: new Set() };
-        }
+      // Always check actual part completions, regardless of lesson completion status
+      console.log('📝 [CourseService] Checking actual part completions...');
 
-        // Mark all parts as completed
-        const completedParts = new Set();
-        lesson.parts.forEach((_, index) => {
-          completedParts.add(index);
-        });
-
-        return {
-          success: true,
-          completedParts: completedParts
-        };
-      }
-
-      // Lesson not completed, check individual part completions
+      // Check individual part completions
       const partCompletionsResult = await this.firestore.getCollection('part_completions');
       let partCompletions = [];
       
@@ -1308,12 +1406,104 @@ class CourseService {
         completion.lessonId === lessonId
       );
 
-      const completedParts = new Set();
-      lessonSpecificPartCompletions.forEach(completion => {
-        if (typeof completion.partIndex === 'number') {
-          completedParts.add(completion.partIndex);
+      console.log('🔍 [CourseService] Found part completions:', lessonSpecificPartCompletions.length);
+      console.log('🔍 [CourseService] Part completions details:', lessonSpecificPartCompletions.map(c => ({
+        id: c.id,
+        lessonId: c.lessonId,
+        partIndex: c.partIndex,
+        completedAt: c.completedAt
+      })));
+      
+      // Debug: Log all part completions for this student and course
+      const allStudentPartCompletions = partCompletions.filter(completion => 
+        completion.studentId === studentId && completion.courseId === courseId
+      );
+      // Check for duplicates and auto-cleanup
+      const completionMap = new Map();
+      const duplicates = [];
+      
+      allStudentPartCompletions.forEach(completion => {
+        const key = `${completion.lessonId}_${completion.partIndex}`;
+        if (completionMap.has(key)) {
+          duplicates.push({
+            key,
+            existing: completionMap.get(key),
+            duplicate: completion
+          });
+        } else {
+          completionMap.set(key, completion);
         }
       });
+      
+      if (duplicates.length > 0) {
+        // Auto-cleanup duplicates
+        for (const duplicate of duplicates) {
+          try {
+            // Keep the one with later timestamp, delete the older one
+            const toDelete = duplicate.duplicate.timestamp < duplicate.existing.timestamp 
+              ? duplicate.duplicate 
+              : duplicate.existing;
+            
+            await this.firestore.deleteDocument('part_completions', toDelete.id);
+          } catch (error) {
+            console.error('❌ [CourseService] Error deleting duplicate:', error);
+          }
+        }
+      }
+      
+      // Get course data for validation
+      const courseResult = await this.firestore.getDocument('courses', courseId);
+      let course;
+      if (courseResult && typeof courseResult === 'object') {
+        if (courseResult.success !== undefined) {
+          course = courseResult.data;
+        } else {
+          course = courseResult;
+        }
+      }
+
+      const completedParts = new Set();
+      const invalidPartCompletions = [];
+      
+      lessonSpecificPartCompletions.forEach(completion => {
+        if (typeof completion.partIndex === 'number') {
+          // Check if partIndex is valid for this lesson
+          const lesson = course?.lessons?.find(l => l.id === lessonId);
+          if (lesson && lesson.parts) {
+            // partIndex is 0-based, so it should be < lesson.parts.length
+            if (completion.partIndex >= lesson.parts.length) {
+              console.log('⚠️ [CourseService] Found completion with invalid partIndex:', {
+                lessonId,
+                partIndex: completion.partIndex,
+                totalParts: lesson.parts.length,
+                completionId: completion.id,
+                lessonParts: lesson.parts.map((p, idx) => ({ index: idx, id: p.id, title: p.title }))
+              });
+              invalidPartCompletions.push(completion);
+            } else {
+              completedParts.add(completion.partIndex);
+            }
+          } else {
+            console.log('⚠️ [CourseService] Lesson not found or has no parts:', {
+              lessonId,
+              lessonFound: !!lesson,
+              hasParts: lesson?.parts?.length > 0
+            });
+            invalidPartCompletions.push(completion);
+          }
+        }
+      });
+      
+      // Auto-cleanup invalid part completions
+      if (invalidPartCompletions.length > 0) {
+        for (const invalidCompletion of invalidPartCompletions) {
+          try {
+            await this.firestore.deleteDocument('part_completions', invalidCompletion.id);
+          } catch (error) {
+            console.error('❌ [CourseService] Error deleting invalid part completion:', error);
+          }
+        }
+      }
 
       return {
         success: true,
@@ -1325,6 +1515,195 @@ class CourseService {
         success: false,
         error: error.message,
         completedParts: new Set()
+      };
+    }
+  }
+
+  // Clean up duplicate part completions based on lessonId + partIndex
+  async cleanupDuplicatePartCompletions(studentId, courseId) {
+    try {
+      console.log('🧹 [CourseService] Cleaning up duplicate part completions...');
+      
+      // Get all part completions for this student and course
+      const partCompletionsResult = await this.firestore.getCollection('part_completions');
+      let partCompletions = [];
+      
+      if (Array.isArray(partCompletionsResult)) {
+        partCompletions = partCompletionsResult;
+      } else if (partCompletionsResult?.success && Array.isArray(partCompletionsResult.data)) {
+        partCompletions = partCompletionsResult.data;
+      }
+
+      const studentPartCompletions = partCompletions.filter(pc => 
+        pc.studentId === studentId && pc.courseId === courseId
+      );
+
+      console.log('🔍 [CourseService] Found part completions:', studentPartCompletions.length);
+
+      // Group by lessonId and partIndex to find duplicates
+      const completionMap = new Map();
+      const duplicates = [];
+
+      studentPartCompletions.forEach(completion => {
+        const key = `${completion.lessonId}_${completion.partIndex}`;
+        if (completionMap.has(key)) {
+          // Found duplicate - keep the one with later timestamp
+          const existing = completionMap.get(key);
+          if (completion.timestamp > existing.timestamp) {
+            // Current completion is newer, replace existing
+            duplicates.push(existing);
+            completionMap.set(key, completion);
+            console.log('⚠️ [CourseService] Found newer duplicate completion:', {
+              id: completion.id,
+              lessonId: completion.lessonId,
+              partIndex: completion.partIndex,
+              completedAt: completion.completedAt,
+              timestamp: completion.timestamp
+            });
+          } else {
+            // Existing completion is newer, mark current as duplicate
+            duplicates.push(completion);
+            console.log('⚠️ [CourseService] Found older duplicate completion:', {
+              id: completion.id,
+              lessonId: completion.lessonId,
+              partIndex: completion.partIndex,
+              completedAt: completion.completedAt,
+              timestamp: completion.timestamp
+            });
+          }
+        } else {
+          completionMap.set(key, completion);
+        }
+      });
+
+      if (duplicates.length > 0) {
+        console.log('🗑️ [CourseService] Removing duplicate part completions...');
+        
+        // Delete duplicates (keep the first one)
+        for (const duplicate of duplicates) {
+          try {
+            await this.firestore.deleteDocument('part_completions', duplicate.id);
+            console.log('✅ [CourseService] Deleted duplicate completion:', duplicate.id);
+          } catch (error) {
+            console.error('❌ [CourseService] Error deleting duplicate:', duplicate.id, error);
+          }
+        }
+
+        return {
+          success: true,
+          message: `Cleaned up ${duplicates.length} duplicate part completions`,
+          cleanedCount: duplicates.length
+        };
+      }
+
+      return {
+        success: true,
+        message: 'No duplicate data found',
+        cleanedCount: 0
+      };
+    } catch (error) {
+      console.error('❌ [CourseService] Error cleaning up duplicate data:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // Clean up inconsistent part completions (parts that don't exist in lessons)
+  async cleanupInconsistentPartCompletions(studentId, courseId) {
+    try {
+      console.log('🧹 [CourseService] Cleaning up inconsistent part completions...');
+      
+      // Get course data to validate part completions
+      const courseResult = await this.firestore.getDocument('courses', courseId);
+      let course;
+      if (courseResult && typeof courseResult === 'object') {
+        if (courseResult.success !== undefined) {
+          if (!courseResult.success) {
+            return { success: false, message: 'Course not found' };
+          }
+          course = courseResult.data;
+        } else {
+          course = courseResult;
+        }
+      } else {
+        return { success: false, message: 'Course not found' };
+      }
+
+      if (!course || !course.lessons) {
+        return { success: false, message: 'Course has no lessons' };
+      }
+
+      // Get all part completions for this student and course
+      const partCompletionsResult = await this.firestore.getCollection('part_completions');
+      let partCompletions = [];
+      
+      if (Array.isArray(partCompletionsResult)) {
+        partCompletions = partCompletionsResult;
+      } else if (partCompletionsResult?.success && Array.isArray(partCompletionsResult.data)) {
+        partCompletions = partCompletionsResult.data;
+      }
+
+      const studentPartCompletions = partCompletions.filter(pc => 
+        pc.studentId === studentId && pc.courseId === courseId
+      );
+
+      console.log('🔍 [CourseService] Found part completions:', studentPartCompletions.length);
+
+      // Find truly inconsistent part completions (parts that don't exist in lessons)
+      const inconsistentCompletions = [];
+      
+      for (const completion of studentPartCompletions) {
+        const lesson = course.lessons.find(l => l.id === completion.lessonId);
+        
+        if (!lesson) {
+          // Lesson doesn't exist
+          console.log('⚠️ [CourseService] Part completion for non-existent lesson:', completion.lessonId);
+          inconsistentCompletions.push(completion);
+        } else if (!lesson.parts || completion.partIndex >= lesson.parts.length) {
+          // Part doesn't exist in lesson
+          console.log('⚠️ [CourseService] Part completion for non-existent part:', {
+            lessonId: completion.lessonId,
+            partIndex: completion.partIndex,
+            totalParts: lesson.parts?.length || 0
+          });
+          inconsistentCompletions.push(completion);
+        }
+      }
+
+      console.log('⚠️ [CourseService] Found truly inconsistent completions:', inconsistentCompletions.length);
+
+      if (inconsistentCompletions.length > 0) {
+        console.log('🗑️ [CourseService] Removing truly inconsistent part completions...');
+        
+        // Delete truly inconsistent part completions
+        for (const completion of inconsistentCompletions) {
+          try {
+            await this.firestore.deleteDocument('part_completions', completion.id);
+            console.log('✅ [CourseService] Deleted inconsistent completion:', completion.id);
+          } catch (error) {
+            console.error('❌ [CourseService] Error deleting completion:', completion.id, error);
+          }
+        }
+
+        return {
+          success: true,
+          message: `Cleaned up ${inconsistentCompletions.length} inconsistent part completions`,
+          cleanedCount: inconsistentCompletions.length
+        };
+      }
+
+      return {
+        success: true,
+        message: 'No inconsistent data found',
+        cleanedCount: 0
+      };
+    } catch (error) {
+      console.error('❌ [CourseService] Error cleaning up inconsistent data:', error);
+      return {
+        success: false,
+        error: error.message
       };
     }
   }
