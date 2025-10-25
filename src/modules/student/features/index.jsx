@@ -18,7 +18,8 @@ import {
   Calendar,
   Award,
   User,
-  ChevronDown
+  ChevronDown,
+  ClipboardList
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import { USER_ROLES, SUBSCRIPTION_TYPES } from "../../../services/firebase";
@@ -336,11 +337,18 @@ const StudentDashboard = () => {
               { id: "courses", label: "Khóa học của tôi", icon: BookOpen },
               { id: "all-courses", label: "Tất cả khóa học", icon: BookOpen },
               { id: "achievements", label: "Thành tích", icon: Trophy },
+              { id: "survey", label: "Khảo sát", icon: ClipboardList },
               { id: "chatbot", label: "AI Chatbot", icon: MessageCircle }
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.id === "survey") {
+                    navigate(ENDPOINTS.STUDENT.SURVEY_HISTORY);
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? "border-blue-500 text-blue-600"

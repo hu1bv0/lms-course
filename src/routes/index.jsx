@@ -16,6 +16,7 @@ import { ENDPOINTS } from "./endPoints";
 import LandingLayout from "../layouts/LandingLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../hooks/useAuth";
+import SurveyWrapper from "../components/SurveyWrapper";
 const WEB_NAME = "Learnly";
 
 const RequiredAuth = ({ children, path, requiredRoles = [] }) => {
@@ -47,7 +48,7 @@ const RequiredAuth = ({ children, path, requiredRoles = [] }) => {
     }
   }
 
-  return children;
+  return <SurveyWrapper>{children}</SurveyWrapper>;
 };
 
 RequiredAuth.propTypes = {
@@ -152,6 +153,14 @@ const studentCourseDetailPage = {
   requiredRoles: ["student"],
 };
 
+const studentSurveyHistoryPage = {
+  path: ENDPOINTS.STUDENT.SURVEY_HISTORY,
+  component: lazy(() => import("../modules/survey/components/SurveyHistory")),
+  title: `Lịch sử Khảo sát | ${WEB_NAME}`,
+  Layout: LandingLayout,
+  requiredRoles: ["student"],
+};
+
 // Student root route (redirect to dashboard) - Fix: Make it a proper lazy component
 const studentRootPage = {
   path: ENDPOINTS.STUDENT.STUDENT_ROOT,
@@ -192,6 +201,13 @@ const profilePage = {
   Layout: LandingLayout,
 };
 
+const surveyPage = {
+  path: ENDPOINTS.SHARED.SURVEY,
+  component: lazy(() => import("../modules/survey/features/index")),
+  title: `Khảo sát học tập | ${WEB_NAME}`,
+  Layout: LandingLayout,
+};
+
 
 
 // Các trang khác sẽ được thêm vào đây
@@ -203,12 +219,14 @@ export const privateRouteData = [
   studentDashboardPage,
   studentRootPage,
   studentCourseDetailPage,
+  studentSurveyHistoryPage,
 
   // Shared Features (Protected)
   subscriptionPage,
   paymentPage,
   chatbotPage,
   profilePage,
+  surveyPage,
 ];
 
 export const publicRoutesData = [

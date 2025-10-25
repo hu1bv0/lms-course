@@ -18,6 +18,7 @@ export { default as parentService } from './parentService';
 export { default as notificationService } from './notificationService';
 export { default as adminAnalyticsService } from './adminAnalyticsService';
 export { default as aiService } from './aiService';
+export { default as surveyService } from './surveyService';
 
 // Export legacy service for backward compatibility
 export { default as legacyAuthService } from './legacyAuthService';

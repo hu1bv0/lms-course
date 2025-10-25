@@ -42,6 +42,7 @@ export const ENDPOINTS = Object.freeze({
     COURSE_DETAIL: "/student/course/:courseId",
     ACHIEVEMENTS: "/student/achievements",
     CHATBOT: "/student/chatbot",
+    SURVEY_HISTORY: "/student/survey-history",
     SETTINGS: "/student/settings",
   },
   
@@ -51,6 +52,7 @@ export const ENDPOINTS = Object.freeze({
     SUBSCRIPTION: "/subscription",
     PAYMENT: "/payment",
     CHATBOT: "/chatbot",
+    SURVEY: "/survey",
   },
 
 });
