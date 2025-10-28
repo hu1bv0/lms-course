@@ -86,6 +86,11 @@ export const useAuth = () => {
           
           lastUserData = currentUserDataString;
           
+          // Don't show loading screen for profile updates
+          if (!isFirstLoad) {
+            memoizedDispatch(setLoading(false));
+          }
+          
           if (userData) {
             memoizedDispatch(setUser({
               user: {
@@ -234,6 +239,20 @@ export const useAuth = () => {
     }
   }, [memoizedDispatch]);
 
+  const updateProfileData = useCallback(async (userId, profileData) => {
+    try {
+      console.log('Updating profile data:', { userId, profileData });
+      const result = await authService.updateProfile(profileData);
+      console.log('Profile update result:', result);
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      memoizedDispatch(setError(error.message));
+      throw error;
+    }
+  }, [memoizedDispatch]);
+
   return {
     user,
     userData,
@@ -248,6 +267,7 @@ export const useAuth = () => {
     loginWithFacebook,
     logout,
     forgotPassword,
-    changePassword
+    changePassword,
+    updateProfileData
   };
 };

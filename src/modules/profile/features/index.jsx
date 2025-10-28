@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ENDPOINTS } from "../../../routes/endPoints";
 import { useAuth } from "../../../hooks/useAuth";
 import { USER_ROLES, SUBSCRIPTION_TYPES } from "../../../services/firebase";
 import parentService from "../../../services/firebase/parentService";
+import { getAllGrades } from "../../../constants/educationConstants";
 import { toast } from "react-toastify";
 import { 
   User, 
@@ -20,13 +21,15 @@ import {
   Shield,
   Star,
   UserPlus,
-  Users
+  Users,
+  Loader2
 } from "lucide-react";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { userData, subscriptionType, updateProfileData, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({
     displayName: "",
     phone: "",
@@ -36,20 +39,34 @@ const Profile = () => {
   const [studentCode, setStudentCode] = useState("");
   const [linkingStudent, setLinkingStudent] = useState(false);
   const [linkedStudents, setLinkedStudents] = useState([]);
+  const lastUserDataRef = useRef(null);
 
+  // Update editData when userData changes (but only when not editing)
   useEffect(() => {
-    if (userData) {
-      setEditData({
+    if (userData && !isEditing && !isSaving) {
+      const currentData = {
         displayName: userData.displayName || "",
         phone: userData.phone || "",
         school: userData.school || "",
         grade: userData.grade || ""
-      });
+      };
       
-      // Load linked students for parents
-      if (userData.role === USER_ROLES.PARENT) {
-        loadLinkedStudents();
+      // Only update if data actually changed
+      const dataString = JSON.stringify(currentData);
+      const lastDataString = JSON.stringify(lastUserDataRef.current);
+      
+      if (dataString !== lastDataString) {
+        console.log('Updating editData from userData:', currentData);
+        setEditData(currentData);
+        lastUserDataRef.current = currentData;
       }
+    }
+  }, [userData, isEditing, isSaving]);
+
+  // Load linked students for parents
+  useEffect(() => {
+    if (userData?.role === USER_ROLES.PARENT) {
+      loadLinkedStudents();
     }
   }, [userData]);
 
@@ -102,18 +119,34 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    setIsSaving(true);
     try {
-      await updateProfileData(userData.uid, editData);
-      toast.success("Cập nhật thông tin thành công!", {
+      console.log('Saving profile with data:', editData);
+      const result = await updateProfileData(userData.uid, editData);
+      console.log('Save profile result:', result);
+      
+      console.log('Current userData after save:', userData);
+      
+      toast.success(result?.message || "Cập nhật thông tin thành công!", {
         position: "top-right",
         autoClose: 2000,
       });
+      
+      // Close edit mode after successful save
       setIsEditing(false);
+      
+      // Wait a bit for the auth state to update
+      setTimeout(() => {
+        console.log('UserData after timeout:', userData);
+      }, 1000);
     } catch (error) {
-      toast.error("Có lỗi xảy ra khi cập nhật thông tin!", {
+      console.error('Error saving profile:', error);
+      toast.error(error?.message || "Có lỗi xảy ra khi cập nhật thông tin!", {
         position: "top-right",
         autoClose: 3000,
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -247,10 +280,17 @@ const Profile = () => {
                 {isEditing && (
                   <button
                     onClick={handleSaveProfile}
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                   >
-                    Lưu thay đổi
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : (
+                      <span>Lưu thay đổi</span>
+                    )}
                   </button>
                 )}
               </div>
@@ -301,7 +341,7 @@ const Profile = () => {
                     />
                   ) : (
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-900">{userData?.displayName || "Chưa cập nhật"}</span>
+                      <span className="text-gray-900">{editData?.displayName || userData?.displayName || "Chưa cập nhật"}</span>
                     </div>
                   )}
                 </div>
@@ -322,7 +362,7 @@ const Profile = () => {
                     />
                   ) : (
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-900">{userData?.phone || "Chưa cập nhật"}</span>
+                      <span className="text-gray-900">{editData?.phone || userData?.phone || "Chưa cập nhật"}</span>
                     </div>
                   )}
                 </div>
@@ -343,7 +383,7 @@ const Profile = () => {
                     />
                   ) : (
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="text-gray-900">{userData?.school || "Chưa cập nhật"}</span>
+                      <span className="text-gray-900">{editData?.school || userData?.school || "Chưa cập nhật"}</span>
                     </div>
                   )}
                 </div>
@@ -362,17 +402,15 @@ const Profile = () => {
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Chọn lớp học</option>
-                        <option value="Lớp 6">Lớp 6</option>
-                        <option value="Lớp 7">Lớp 7</option>
-                        <option value="Lớp 8">Lớp 8</option>
-                        <option value="Lớp 9">Lớp 9</option>
-                        <option value="Lớp 10">Lớp 10</option>
-                        <option value="Lớp 11">Lớp 11</option>
-                        <option value="Lớp 12">Lớp 12</option>
+                        {getAllGrades().map((grade) => (
+                          <option key={grade.gradeNumber} value={grade.grade}>
+                            {grade.grade}
+                          </option>
+                        ))}
                       </select>
                     ) : (
                       <div className="p-3 bg-gray-50 rounded-lg">
-                        <span className="text-gray-900">{userData?.grade || "Chưa cập nhật"}</span>
+                        <span className="text-gray-900">{editData?.grade || userData?.grade || "Chưa cập nhật"}</span>
                       </div>
                     )}
                   </div>

@@ -289,15 +289,28 @@ class AuthService {
       const user = auth.currentUser;
       if (!user) throw new Error('Không có người dùng đang đăng nhập');
 
-      // Update Firebase Auth profile
-      await updateProfile(user, {
-        displayName: profileData.displayName,
-        photoURL: profileData.photoURL
-      });
+      // Prepare Firebase Auth profile update (only update if fields are provided)
+      const authProfileUpdate = {};
+      if (profileData.displayName !== undefined) {
+        authProfileUpdate.displayName = profileData.displayName;
+      }
+      if (profileData.photoURL !== undefined) {
+        authProfileUpdate.photoURL = profileData.photoURL;
+      }
 
+      // Update Firebase Auth profile if there are fields to update
+      if (Object.keys(authProfileUpdate).length > 0) {
+        await updateProfile(user, authProfileUpdate);
+      }
+
+      // Prepare Firestore update data (remove undefined values)
+      const firestoreData = Object.fromEntries(
+        Object.entries(profileData).filter(([_, v]) => v !== undefined)
+      );
+      
       // Update Firestore user document
       await updateDoc(doc(db, 'users', user.uid), {
-        ...profileData,
+        ...firestoreData,
         updatedAt: new Date()
       });
 
