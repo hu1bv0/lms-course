@@ -5,7 +5,7 @@ import { useSurvey } from '../../../hooks/useSurvey';
 import Loading from '../../../components/Loading';
 import UserSurvey from './UserSurvey';
 import CourseRecommendations from './CourseRecommendations';
-import { getAllGrades, SUBJECTS_BY_LEVEL } from '../../../constants/educationConstants';
+import { getSurveyQuestions, getAnswerText as getAnswerTextUtil } from '../../../constants/surveyConstants';
 import { ENDPOINTS } from '../../../routes/endPoints';
 import { ArrowLeft, ClipboardList, Calendar, BookOpen, Target, Plus, RefreshCw, Download, Eye } from 'lucide-react';
 
@@ -22,110 +22,8 @@ const SurveyHistory = () => {
   const [showRecommendationsModal, setShowRecommendationsModal] = useState(false);
   const [surveyRecommendations, setSurveyRecommendations] = useState(null);
 
-  // Danh sách câu hỏi khảo sát (giống như trong UserSurvey)
-  const surveyQuestions = [
-    {
-      id: 'grade_level',
-      question: 'Bạn đang học lớp nào?',
-      type: 'radio',
-      options: getAllGrades().map(grade => ({
-        value: `grade_${grade.gradeNumber}`,
-        label: grade.grade
-      })).concat([
-        { value: 'university', label: 'Đại học' },
-        { value: 'other', label: 'Khác' }
-      ])
-    },
-    {
-      id: 'subject_focus',
-      question: 'Môn học nào bạn muốn tập trung cải thiện?',
-      type: 'checkbox',
-      options: [
-        ...Object.values(SUBJECTS_BY_LEVEL).flatMap(subjects => 
-          subjects.map(subject => ({
-            value: subject.id,
-            label: `${subject.icon} ${subject.name}`
-          }))
-        ).filter((subject, index, self) => 
-          index === self.findIndex(s => s.value === subject.value)
-        )
-      ]
-    },
-    {
-      id: 'math_level',
-      question: 'Bạn đánh giá trình độ toán học hiện tại của mình như thế nào?',
-      type: 'radio',
-      options: [
-        { value: 'beginner', label: 'Mới bắt đầu' },
-        { value: 'intermediate', label: 'Trung bình' },
-        { value: 'advanced', label: 'Nâng cao' }
-      ]
-    },
-    {
-      id: 'learning_goals',
-      question: 'Mục tiêu học tập của bạn là gì?',
-      type: 'checkbox',
-      options: [
-        { value: 'improve_grades', label: 'Cải thiện điểm số' },
-        { value: 'prepare_exam', label: 'Chuẩn bị thi cử' },
-        { value: 'learn_new_skills', label: 'Học kỹ năng mới' },
-        { value: 'career_preparation', label: 'Chuẩn bị nghề nghiệp' }
-      ]
-    },
-    {
-      id: 'difficulty_preference',
-      question: 'Bạn thích mức độ khó như thế nào?',
-      type: 'radio',
-      options: [
-        { value: 'easy', label: 'Dễ dàng' },
-        { value: 'moderate', label: 'Vừa phải' },
-        { value: 'challenging', label: 'Thử thách' }
-      ]
-    },
-    {
-      id: 'learning_style',
-      question: 'Phong cách học tập nào phù hợp với bạn?',
-      type: 'radio',
-      options: [
-        { value: 'visual', label: 'Hình ảnh' },
-        { value: 'auditory', label: 'Âm thanh' },
-        { value: 'kinesthetic', label: 'Thực hành' },
-        { value: 'reading', label: 'Đọc hiểu' }
-      ]
-    },
-    {
-      id: 'time_commitment',
-      question: 'Bạn có thể dành bao nhiêu thời gian học mỗi tuần?',
-      type: 'radio',
-      options: [
-        { value: '1-3_hours', label: '1-3 giờ' },
-        { value: '4-6_hours', label: '4-6 giờ' },
-        { value: '7-10_hours', label: '7-10 giờ' },
-        { value: 'more_than_10', label: 'Hơn 10 giờ' }
-      ]
-    },
-    {
-      id: 'weak_areas',
-      question: 'Lĩnh vực nào bạn cần cải thiện nhiều nhất?',
-      type: 'checkbox',
-      options: [
-        { value: 'problem_solving', label: 'Giải quyết vấn đề' },
-        { value: 'time_management', label: 'Quản lý thời gian' },
-        { value: 'focus_concentration', label: 'Tập trung' },
-        { value: 'motivation', label: 'Động lực học tập' }
-      ]
-    },
-    {
-      id: 'motivation_level',
-      question: 'Mức độ động lực học tập của bạn hiện tại?',
-      type: 'radio',
-      options: [
-        { value: 'low', label: 'Thấp' },
-        { value: 'medium', label: 'Trung bình' },
-        { value: 'high', label: 'Cao' }
-      ]
-    }
-  ];
+  // Sử dụng survey questions từ constants chung
+  const surveyQuestions = getSurveyQuestions();
 
   useEffect(() => {
     loadData();
@@ -220,20 +118,8 @@ const SurveyHistory = () => {
     setSelectedSurvey(null);
   };
 
-  const getAnswerText = (questionId, answerValue) => {
-    const question = surveyQuestions.find(q => q.id === questionId);
-    if (!question) return answerValue;
-
-    if (Array.isArray(answerValue)) {
-      return answerValue.map(val => {
-        const option = question.options.find(opt => opt.value === val);
-        return option ? option.label : val;
-      }).join(', ');
-    } else {
-      const option = question.options.find(opt => opt.value === answerValue);
-      return option ? option.label : answerValue;
-    }
-  };
+  // Sử dụng utility function từ constants chung
+  const getAnswerText = getAnswerTextUtil;
 
   if (loading || isLoading) {
     return <Loading />;
@@ -387,23 +273,21 @@ const SurveyHistory = () => {
                         {survey.answers.grade_level && (
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <span className="text-sm text-gray-600">Lớp học:</span>
-                            <p className="font-medium">{survey.answers.grade_level.replace('grade_', 'Lớp ')}</p>
+                            <p className="font-medium">{getAnswerText('grade_level', survey.answers.grade_level)}</p>
                           </div>
                         )}
                         {survey.answers.subject_focus && (
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <span className="text-sm text-gray-600">Môn học:</span>
                             <p className="font-medium">
-                              {Array.isArray(survey.answers.subject_focus) 
-                                ? survey.answers.subject_focus.length + ' môn'
-                                : survey.answers.subject_focus}
+                              {getAnswerText('subject_focus', survey.answers.subject_focus)}
                             </p>
                           </div>
                         )}
                         {survey.answers.math_level && (
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <span className="text-sm text-gray-600">Trình độ:</span>
-                            <p className="font-medium">{survey.answers.math_level}</p>
+                            <p className="font-medium">{getAnswerText('math_level', survey.answers.math_level)}</p>
                           </div>
                         )}
                       </div>
