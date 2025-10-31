@@ -152,26 +152,32 @@ class SurveyService {
 
   // Tạo prompt cho AI
   createRecommendationPrompt(answers) {
-    return `You are an AI assistant that must always return output strictly in JSON format.
-Do not include any explanations, markdown code fences, or additional commentary.
-If the user’s input is a prompt requesting analysis, recommendations, or data generation, 
-respond with a valid JSON object that matches the structure requested in the prompt. 
-Always ensure your output is valid, parseable JSON.
-Never wrap the JSON in code blocks.
-Never include extra notes or natural language text outside the JSON.
+    return `You are an AI education consultant that must always return output strictly in valid JSON format.
+Do not include any explanations, markdown, or text outside the JSON object.
 
-KẾT QUẢ KHẢO SÁT:
-- Lớp học: ${answers.grade_level || 'Chưa trả lời'}
-- Môn học tập trung: ${Array.isArray(answers.subject_focus) ? answers.subject_focus.join(', ') : answers.subject_focus || 'Chưa trả lời'}
-- Trình độ toán học: ${answers.math_level || 'Chưa trả lời'}
-- Mục tiêu học tập: ${Array.isArray(answers.learning_goals) ? answers.learning_goals.join(', ') : answers.learning_goals || 'Chưa trả lời'}
-- Mức độ khó ưa thích: ${answers.difficulty_preference || 'Chưa trả lời'}
-- Phong cách học tập: ${answers.learning_style || 'Chưa trả lời'}
-- Thời gian học mỗi tuần: ${answers.time_commitment || 'Chưa trả lời'}
-- Lĩnh vực cần cải thiện: ${Array.isArray(answers.weak_areas) ? answers.weak_areas.join(', ') : answers.weak_areas || 'Chưa trả lời'}
-- Mức độ động lực: ${answers.motivation_level || 'Chưa trả lời'}
+Your task: Analyze a student's survey results and recommend suitable courses that match their grade level, subject focus, learning goals, and style.
 
-Hãy phân tích và đưa ra gợi ý theo format JSON sau:
+Follow these rules:
+1. Always return a valid JSON object that exactly follows the schema below.
+2. Provide deep, contextual insights based on the student's grade and subjects.
+3. Recommend 3–5 specific, realistic courses aligned with their grade level and academic program.
+4. Include both main and supplementary subjects.
+5. Never include code fences, comments, or natural language outside the JSON.
+
+---
+STUDENT SURVEY RESULTS:
+- Grade level: ${answers.grade_level || 'Chưa trả lời'}
+- Focus subject(s): ${Array.isArray(answers.subject_focus) ? answers.subject_focus.join(', ') : answers.subject_focus || 'Chưa trả lời'}
+- Math proficiency: ${answers.math_level || 'Chưa trả lời'}
+- Learning goals: ${Array.isArray(answers.learning_goals) ? answers.learning_goals.join(', ') : answers.learning_goals || 'Chưa trả lời'}
+- Preferred difficulty: ${answers.difficulty_preference || 'Chưa trả lời'}
+- Learning style: ${answers.learning_style || 'Chưa trả lời'}
+- Weekly study time: ${answers.time_commitment || 'Chưa trả lời'}
+- Areas for improvement: ${Array.isArray(answers.weak_areas) ? answers.weak_areas.join(', ') : answers.weak_areas || 'Chưa trả lời'}
+- Motivation level: ${answers.motivation_level || 'Chưa trả lời'}
+---
+
+OUTPUT FORMAT (JSON only):
 
 {
   "analysis": {
@@ -202,11 +208,14 @@ Hãy phân tích và đưa ra gợi ý theo format JSON sau:
   }
 }
 
-QUAN TRỌNG: 
-- Đưa ra gợi ý khóa học cụ thể theo lớp học (ví dụ: "Toán lớp 10 - Hàm số và đồ thị")
-- Phù hợp với chương trình học của lớp đó
-- Bao gồm cả môn học chính và môn học phụ
-- Đưa ra 3-5 khóa học cụ thể phù hợp với lớp học và môn học được chọn.`;
+---
+
+IMPORTANT NOTES:
+- Output must be pure JSON with no markdown.
+- Ensure every field is filled appropriately.
+- Recommendations must be realistic, specific to the given grade and subjects.
+- Maintain consistent tone, clarity, and educational accuracy.
+`;
   }
 
   // Parse response từ AI
