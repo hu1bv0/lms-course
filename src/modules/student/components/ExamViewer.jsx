@@ -11,7 +11,9 @@ import {
   ChevronRight,
   BookOpen,
   Trophy,
-  ArrowLeft
+  ArrowLeft,
+  Download,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CKEditorComponent from '../../../components/ui/CKEditorComponent';
@@ -49,10 +51,16 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
     setAnswers(initialAnswers);
   }, [exam]);
 
-  const currentQuestion = getCurrentQuestion();
+  // Check if exam has questions or just attachments
+  const hasQuestions = (exam.questions?.essay?.length || 0) + (exam.questions?.multipleChoice?.length || 0) > 0;
+  const hasAttachments = exam.attachments && exam.attachments.length > 0;
   const totalQuestions = (exam.questions?.essay?.length || 0) + (exam.questions?.multipleChoice?.length || 0);
 
+  const currentQuestion = getCurrentQuestion();
+
   function getCurrentQuestion() {
+    if (!hasQuestions) return null;
+    
     const essayQuestions = exam.questions?.essay || [];
     const mcQuestions = exam.questions?.multipleChoice || [];
     
@@ -60,7 +68,7 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
       return { ...essayQuestions[currentQuestionIndex], type: 'essay' };
     } else {
       const mcIndex = currentQuestionIndex - essayQuestions.length;
-      return { ...mcQuestions[mcIndex], type: 'multipleChoice' };
+      return mcQuestions[mcIndex] ? { ...mcQuestions[mcIndex], type: 'multipleChoice' } : null;
     }
   }
 
@@ -194,6 +202,8 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
       question = mcQuestions[index - essayQuestions.length];
     }
 
+    if (!question) return 'unanswered';
+
     if (answers[question.id] !== undefined && answers[question.id] !== null && answers[question.id] !== '') {
       return 'answered';
     }
@@ -206,6 +216,102 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
         <div className="text-center">
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600">Không có bài thi nào</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If exam only has attachments and no questions, show file viewer
+  if (!hasQuestions && hasAttachments) {
+    return (
+      <div className="h-screen bg-gray-50 overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-6">
+          {/* Header */}
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {exam.title}
+                </h2>
+                {exam.description && (
+                  <p className="text-gray-600">{exam.description}</p>
+                )}
+              </div>
+              <button
+                onClick={onExit}
+                className="text-gray-600 hover:text-gray-900 transition"
+                title="Thoát"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* File Attachments */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Tài liệu bài tập
+            </h3>
+            <div className="space-y-3">
+              {exam.attachments.map((file, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">{file.name}</p>
+                      {file.size && (
+                        <p className="text-sm text-gray-500">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    <Download className="w-4 h-4" />
+                    Tải xuống
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Instructions */}
+          {exam.description && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+              <p className="text-sm text-blue-800">
+                <strong>Hướng dẫn:</strong> {exam.description}
+              </p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={() => {
+                setIsCompleted(true);
+                if (onComplete) {
+                  onComplete({ earned: 0, total: 0, percentage: 0 });
+                }
+                toast.success('Đã xem tài liệu bài tập!', {
+                  position: "top-right",
+                  autoClose: 3000,
+                });
+              }}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              <CheckCircle className="w-4 h-4 inline mr-2" />
+              Đã xem xong
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -295,14 +401,14 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
                       <div className={`p-2 rounded ${
                         isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
                       }`}>
-                        <strong>{String.fromCharCode(65 + userAnswer)}.</strong> {question.options[userAnswer]}
+                        <strong>{String.fromCharCode(65 + userAnswer)}.</strong> {question.options?.[userAnswer] || 'N/A'}
                       </div>
                       
                       {!isCorrect && (
                         <>
                           <div className="text-sm text-gray-600">Đáp án đúng:</div>
                           <div className="p-2 rounded bg-green-50 text-green-800">
-                            <strong>{String.fromCharCode(65 + question.correctAnswer)}.</strong> {question.options[question.correctAnswer]}
+                            <strong>{String.fromCharCode(65 + question.correctAnswer)}.</strong> {question.options?.[question.correctAnswer] || 'N/A'}
                           </div>
                         </>
                       )}
@@ -415,10 +521,10 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
               </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
-                  Câu {currentQuestionIndex + 1} / {totalQuestions}
+                  {totalQuestions > 0 ? `Câu ${currentQuestionIndex + 1} / ${totalQuestions}` : 'Bài thi'}
                 </h1>
                 <p className="text-sm text-gray-600">
-                  {currentQuestion.type === 'essay' ? 'Tự luận' : 'Trắc nghiệm'}
+                  {currentQuestion?.type === 'essay' ? 'Tự luận' : currentQuestion?.type === 'multipleChoice' ? 'Trắc nghiệm' : ''}
                 </p>
               </div>
             </div>
@@ -439,67 +545,76 @@ const ExamViewer = ({ exam, onComplete, onNext, onPrev, onExit, timeLimit = null
         {/* Question Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              {/* Question */}
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Câu hỏi:
-                </h2>
-                <div className="prose max-w-none">
-                  <div 
-                    className="text-gray-900 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: currentQuestion.question }}
-                  />
-                </div>
-              </div>
-
-              {/* Answer Section */}
-              {currentQuestion.type === 'multipleChoice' ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Chọn đáp án:
-                  </h3>
-                  <div className="space-y-3">
-                    {currentQuestion.options.map((option, index) => (
-                      <label key={index} className="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-                        <input
-                          type="radio"
-                          name={`question_${currentQuestion.id}`}
-                          value={index}
-                          checked={answers[currentQuestion.id] === index}
-                          onChange={(e) => handleAnswerChange(currentQuestion.id, parseInt(e.target.value))}
-                          className="mt-1 mr-3 w-4 h-4 text-blue-600"
-                        />
-                        <div className="flex-1">
-                          <span className="text-gray-900 leading-relaxed">
-                            <strong>{String.fromCharCode(65 + index)}.</strong> {option}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
+            {currentQuestion ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                {/* Question */}
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Câu hỏi:
+                  </h2>
+                  <div className="prose max-w-none">
+                    <div 
+                      className="text-gray-900 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: currentQuestion.question }}
+                    />
                   </div>
                 </div>
-              ) : (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Câu trả lời của bạn:
-                  </h3>
-                  <CKEditorComponent
-                    value={answers[currentQuestion.id] || ''}
-                    onChange={(content) => handleAnswerChange(currentQuestion.id, content)}
-                    placeholder="Nhập câu trả lời của bạn..."
-                  />
-                </div>
-              )}
 
-              {/* Question Info */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>Điểm: {currentQuestion.points}</span>
-                  <span>Loại: {currentQuestion.type === 'essay' ? 'Tự luận' : 'Trắc nghiệm'}</span>
+                {/* Answer Section */}
+                {currentQuestion.type === 'multipleChoice' ? (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Chọn đáp án:
+                    </h3>
+                    <div className="space-y-3">
+                      {(currentQuestion.options || []).map((option, index) => (
+                        <label key={index} className="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                          <input
+                            type="radio"
+                            name={`question_${currentQuestion.id}`}
+                            value={index}
+                            checked={answers[currentQuestion.id] === index}
+                            onChange={(e) => handleAnswerChange(currentQuestion.id, parseInt(e.target.value))}
+                            className="mt-1 mr-3 w-4 h-4 text-blue-600"
+                          />
+                          <div className="flex-1">
+                            <span className="text-gray-900 leading-relaxed">
+                              <strong>{String.fromCharCode(65 + index)}.</strong> {option}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Câu trả lời của bạn:
+                    </h3>
+                    <CKEditorComponent
+                      value={answers[currentQuestion.id] || ''}
+                      onChange={(content) => handleAnswerChange(currentQuestion.id, content)}
+                      placeholder="Nhập câu trả lời của bạn..."
+                    />
+                  </div>
+                )}
+
+                {/* Question Info */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>Điểm: {currentQuestion.points}</span>
+                    <span>Loại: {currentQuestion.type === 'essay' ? 'Tự luận' : 'Trắc nghiệm'}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Không có câu hỏi nào</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
