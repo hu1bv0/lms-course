@@ -1,9 +1,9 @@
 import firestoreService from './firestoreService';
 
-// AI Model Configuration - Always use gemini-2.5-flash
+// AI Model Configuration - Always use gemini-2.5-flash-image
 const AI_MODEL = {
-  name: 'gemini-2.5-flash',
-  baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+  name: 'gemini-2.5-flash-image',
+  baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
   maxTokens: 1024,
   temperature: 0.7,
   topK: 40,
