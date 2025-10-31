@@ -125,11 +125,11 @@ class SurveyService {
       const prompt = this.createRecommendationPrompt(answers);
       console.log('📋 AI Prompt:', prompt);
       
-      // Gọi AI service
+      // Gọi AI service (không cần system prompt cho survey recommendations)
       const chatId = `survey_${userId}_${Date.now()}`;
       console.log('💬 Calling AI service with chatId:', chatId);
       
-      const result = await this.ai.sendMessage(chatId, prompt, []);
+      const result = await this.ai.sendMessage(chatId, prompt, [], false); // includeSystemPrompt = false
       console.log('🤖 AI Service result:', result);
       
       if (result.success) {
@@ -152,7 +152,13 @@ class SurveyService {
 
   // Tạo prompt cho AI
   createRecommendationPrompt(answers) {
-    return `Bạn là một chuyên gia giáo dục và tư vấn học tập. Dựa trên kết quả khảo sát của một học sinh, hãy phân tích và đưa ra gợi ý khóa học phù hợp với chương trình học cụ thể.
+    return `You are an AI assistant that must always return output strictly in JSON format.
+Do not include any explanations, markdown code fences, or additional commentary.
+If the user’s input is a prompt requesting analysis, recommendations, or data generation, 
+respond with a valid JSON object that matches the structure requested in the prompt. 
+Always ensure your output is valid, parseable JSON.
+Never wrap the JSON in code blocks.
+Never include extra notes or natural language text outside the JSON.
 
 KẾT QUẢ KHẢO SÁT:
 - Lớp học: ${answers.grade_level || 'Chưa trả lời'}

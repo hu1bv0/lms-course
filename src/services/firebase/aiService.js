@@ -174,14 +174,19 @@ class AIService {
   }
 
   // Gửi tin nhắn và nhận phản hồi
-  async sendMessage(chatId, userMessage, messageHistory = []) {
+  async sendMessage(chatId, userMessage, messageHistory = [], includeSystemPrompt = true) {
     try {
-      // Tạo messages array với system prompt
-      const messages = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...messageHistory,
-        { role: 'user', content: userMessage }
-      ];
+      // Tạo messages array với system prompt (nếu cần)
+      const messages = includeSystemPrompt
+        ? [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...messageHistory,
+            { role: 'user', content: userMessage }
+          ]
+        : [
+            ...messageHistory,
+            { role: 'user', content: userMessage }
+          ];
 
       // Gọi Gemini API
       const result = await this.callGeminiAPI(messages);
