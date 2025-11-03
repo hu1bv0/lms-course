@@ -32,9 +32,9 @@ VITE_CLOUDINARY_UPLOAD_URL=https://api.cloudinary.com/v1_1/your_cloud_name/image
 
 ## AI Models Available
 
-- `gemini-2.5-flash-image` (always used, latest hybrid reasoning model)
+- `gemini-2.5-flash` (always used, latest hybrid reasoning model)
 
-**Note**: The app always uses `gemini-2.5-flash-image` model with 1M token context window and thinking budgets.
+**Note**: The app always uses `gemini-2.5-flash` model with 1M token context window and thinking budgets.
 
 ## Testing the Chatbot
 
@@ -47,7 +47,7 @@ VITE_CLOUDINARY_UPLOAD_URL=https://api.cloudinary.com/v1_1/your_cloud_name/image
 ## Troubleshooting
 
 ### Gemini API 404 Error
-- The app always uses `gemini-2.5-flash-image` model (latest hybrid reasoning model)
+- The app always uses `gemini-2.5-flash` model (latest hybrid reasoning model)
 - If you get 404, check the console for "Available models" to see what's supported in your region
 - Make sure your API key is valid and has access to Gemini 2.5 models
 

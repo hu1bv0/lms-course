@@ -1,9 +1,9 @@
 import firestoreService from './firestoreService';
 
-// AI Model Configuration - Always use gemini-2.5-flash-image
+// AI Model Configuration - Always use gemini-2.5-flash
 const AI_MODEL = {
-  name: 'gemini-2.5-flash-image',
-  baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
+  name: 'gemini-2.5-flash',
+  baseUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
   maxTokens: 1024,
   temperature: 0.7,
   topK: 40,
@@ -111,7 +111,7 @@ class AIService {
   }
 
   // Gọi Gemini API với fallback
-  async callGeminiAPI(messages) {
+  async callGeminiAPI(messages, systemInstruction = null) {
     try {
       if (!this.geminiApiKey) {
         console.error('Gemini API key not found');
@@ -121,28 +121,52 @@ class AIService {
       console.log('Calling Gemini API with model:', this.modelConfig.name);
       console.log('API URL:', this.modelConfig.baseUrl);
       console.log('Messages count:', messages.length);
+      console.log('Has system instruction:', !!systemInstruction);
 
       // Format messages for Gemini API
-      const contents = messages.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }));
+      // Tách system prompt và user messages riêng biệt
+      const contents = [];
+      let systemPrompt = systemInstruction;
+      
+      messages.forEach(msg => {
+        if (msg.role === 'system') {
+          // System prompt sẽ được dùng làm systemInstruction
+          if (!systemPrompt) {
+            systemPrompt = msg.content;
+          }
+        } else {
+          contents.push({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }]
+          });
+        }
+      });
+
+      // Tạo request body với systemInstruction riêng biệt
+      const requestBody = {
+        contents: contents,
+        generationConfig: {
+          temperature: this.modelConfig.temperature,
+          topK: this.modelConfig.topK,
+          topP: this.modelConfig.topP,
+          maxOutputTokens: this.modelConfig.maxTokens,
+        },
+        safetySettings: SAFETY_SETTINGS
+      };
+
+      // Thêm systemInstruction nếu có
+      if (systemPrompt) {
+        requestBody.systemInstruction = {
+          parts: [{ text: systemPrompt }]
+        };
+      }
 
       const response = await fetch(`${this.modelConfig.baseUrl}?key=${this.geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          contents: contents,
-          generationConfig: {
-            temperature: this.modelConfig.temperature,
-            topK: this.modelConfig.topK,
-            topP: this.modelConfig.topP,
-            maxOutputTokens: this.modelConfig.maxTokens,
-          },
-          safetySettings: SAFETY_SETTINGS
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -174,22 +198,20 @@ class AIService {
   }
 
   // Gửi tin nhắn và nhận phản hồi
-  async sendMessage(chatId, userMessage, messageHistory = [], includeSystemPrompt = true) {
+  async sendMessage(chatId, userMessage, messageHistory = [], includeSystemPrompt = true, customSystemPrompt = null) {
     try {
-      // Tạo messages array với system prompt (nếu cần)
-      const messages = includeSystemPrompt
-        ? [
-            { role: 'system', content: SYSTEM_PROMPT },
-            ...messageHistory,
-            { role: 'user', content: userMessage }
-          ]
-        : [
-            ...messageHistory,
-            { role: 'user', content: userMessage }
-          ];
+      // Xác định system prompt nào sử dụng
+      const systemPromptToUse = customSystemPrompt || (includeSystemPrompt ? SYSTEM_PROMPT : null);
+      
+      // Tạo messages array (KHÔNG bao gồm system prompt trong messages)
+      // System prompt sẽ được truyền riêng qua systemInstruction
+      const messages = [
+        ...messageHistory,
+        { role: 'user', content: userMessage }
+      ];
 
-      // Gọi Gemini API
-      const result = await this.callGeminiAPI(messages);
+      // Gọi Gemini API với system instruction riêng biệt
+      const result = await this.callGeminiAPI(messages, systemPromptToUse);
       
       if (result.success) {
         // Lưu tin nhắn vào database

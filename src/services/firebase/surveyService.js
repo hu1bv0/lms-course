@@ -2,6 +2,14 @@ import firestoreService from './firestoreService';
 import aiService from './aiService';
 import { getAllGrades, SUBJECTS_BY_LEVEL } from '../../constants/educationConstants';
 
+// Import recommendation prompt từ file (Vite sẽ handle ?raw)
+import recommendationPromptText from '../../constants/recomendation_prompt.txt?raw';
+
+// Function để load recommendation prompt (đã được import ở trên)
+function getRecommendationPrompt() {
+  return recommendationPromptText || '';
+}
+
 class SurveyService {
   constructor() {
     this.firestore = firestoreService;
@@ -121,15 +129,19 @@ class SurveyService {
       console.log('🤖 Generating AI recommendations for user:', userId);
       console.log('📝 Survey answers:', answers);
       
-      // Tạo prompt cho AI
-      const prompt = this.createRecommendationPrompt(answers);
-      console.log('📋 AI Prompt:', prompt);
+      // Load system prompt từ file
+      const systemPrompt = getRecommendationPrompt();
+      console.log('📄 Loaded recommendation system prompt');
       
-      // Gọi AI service (không cần system prompt cho survey recommendations)
+      // Tạo user message theo format dòng 14-23
+      const userMessage = this.createRecommendationPrompt(answers);
+      console.log('📋 User Message:', userMessage);
+      
+      // Gọi AI service với custom system prompt
       const chatId = `survey_${userId}_${Date.now()}`;
       console.log('💬 Calling AI service with chatId:', chatId);
       
-      const result = await this.ai.sendMessage(chatId, prompt, [], false); // includeSystemPrompt = false
+      const result = await this.ai.sendMessage(chatId, userMessage, [], false, systemPrompt);
       console.log('🤖 AI Service result:', result);
       
       if (result.success) {
@@ -150,22 +162,9 @@ class SurveyService {
     }
   }
 
-  // Tạo prompt cho AI
+  // Tạo user message cho AI theo format dòng 14-23 của recomendation_prompt.txt
   createRecommendationPrompt(answers) {
-    return `You are an AI education consultant that must always return output strictly in valid JSON format.
-Do not include any explanations, markdown, or text outside the JSON object.
-
-Your task: Analyze a student's survey results and recommend suitable courses that match their grade level, subject focus, learning goals, and style.
-
-Follow these rules:
-1. Always return a valid JSON object that exactly follows the schema below.
-2. Provide deep, contextual insights based on the student's grade and subjects.
-3. Recommend 3–5 specific, realistic courses aligned with their grade level and academic program.
-4. Include both main and supplementary subjects.
-5. Never include code fences, comments, or natural language outside the JSON.
-
----
-STUDENT SURVEY RESULTS:
+    return `STUDENT SURVEY RESULTS:
 - Grade level: ${answers.grade_level || 'Chưa trả lời'}
 - Focus subject(s): ${Array.isArray(answers.subject_focus) ? answers.subject_focus.join(', ') : answers.subject_focus || 'Chưa trả lời'}
 - Math proficiency: ${answers.math_level || 'Chưa trả lời'}
@@ -174,48 +173,7 @@ STUDENT SURVEY RESULTS:
 - Learning style: ${answers.learning_style || 'Chưa trả lời'}
 - Weekly study time: ${answers.time_commitment || 'Chưa trả lời'}
 - Areas for improvement: ${Array.isArray(answers.weak_areas) ? answers.weak_areas.join(', ') : answers.weak_areas || 'Chưa trả lời'}
-- Motivation level: ${answers.motivation_level || 'Chưa trả lời'}
----
-
-OUTPUT FORMAT (JSON only):
-
-{
-  "analysis": {
-    "grade_level_insights": "phân tích về lớp học và chương trình học",
-    "subject_strengths": ["điểm mạnh về môn học"],
-    "subject_weaknesses": ["điểm cần cải thiện về môn học"],
-    "learning_style_insights": "phân tích phong cách học tập",
-    "motivation_level": "đánh giá mức độ động lực"
-  },
-  "recommendations": [
-    {
-      "category": "tên danh mục khóa học",
-      "title": "tên khóa học cụ thể theo lớp",
-      "description": "mô tả ngắn về khóa học phù hợp với chương trình lớp học",
-      "grade_level": "lớp học phù hợp",
-      "subject": "môn học chính",
-      "difficulty": "beginner/intermediate/advanced",
-      "estimated_duration": "thời gian ước tính",
-      "reason": "lý do gợi ý khóa học này dựa trên lớp học và môn học",
-      "priority": "high/medium/low"
-    }
-  ],
-  "study_plan": {
-    "weekly_schedule": "lịch học đề xuất phù hợp với lớp học",
-    "focus_subjects": ["các môn học cần tập trung theo lớp"],
-    "grade_specific_tips": ["mẹo học tập phù hợp với lớp học"],
-    "exam_preparation": "lời khuyên chuẩn bị thi cử theo lớp"
-  }
-}
-
----
-
-IMPORTANT NOTES:
-- Output must be pure JSON with no markdown.
-- Ensure every field is filled appropriately.
-- Recommendations must be realistic, specific to the given grade and subjects.
-- Maintain consistent tone, clarity, and educational accuracy.
-`;
+- Motivation level: ${answers.motivation_level || 'Chưa trả lời'}`;
   }
 
   // Parse response từ AI
