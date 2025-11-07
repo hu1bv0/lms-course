@@ -258,26 +258,38 @@ const ParentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/50 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-pink-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white/70 backdrop-blur-xl border-b border-white/20 sticky top-0 z-50 shadow-lg shadow-blue-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard Phụ huynh</h1>
-              <p className="text-sm text-gray-600">Theo dõi việc học tập của con cái</p>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Users className="w-6 h-6 text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Dashboard Phụ huynh</h1>
+                <p className="text-sm text-gray-600 font-medium">Theo dõi việc học tập của con cái</p>
+              </div>
             </div>
             
             {/* Children Selector, Notifications and Profile */}
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Con:</span>
+              <span className="text-sm text-gray-700 font-semibold">Con:</span>
               <select 
                 value={selectedChild?.id || ''} 
                 onChange={(e) => {
                   const child = children.find(c => c.id === e.target.value);
                   setSelectedChild(child);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-4 py-2 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 font-medium"
               >
                 <option value="" disabled>
                   {loadingChildren ? 'Đang tải...' : children.length === 0 ? 'Chưa thêm con' : 'Chọn con'}
@@ -294,7 +306,7 @@ const ParentDashboard = () => {
               
               <button
                 onClick={handleViewProfile}
-                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-semibold"
                 title="Thông tin cá nhân"
               >
                 <User className="w-4 h-4" />
@@ -303,7 +315,7 @@ const ParentDashboard = () => {
               
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-semibold"
                 title="Đăng xuất"
               >
                 <LogOut className="w-4 h-4" />
@@ -314,79 +326,81 @@ const ParentDashboard = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         {children.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Users className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Tổng số con</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalChildren}</p>
+                  <p className="text-sm font-semibold text-gray-600">Tổng số con</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{stats.totalChildren}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-green-600" />
+                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <BookOpen className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Khóa học đã đăng ký</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalEnrolledCourses}</p>
+                  <p className="text-sm font-semibold text-gray-600">Khóa học đã đăng ký</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{stats.totalEnrolledCourses}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-purple-600" />
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <CheckCircle className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Khóa học hoàn thành</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalCompletedCourses}</p>
+                  <p className="text-sm font-semibold text-gray-600">Khóa học hoàn thành</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{stats.totalCompletedCourses}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
               <div className="flex items-center">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Clock className="w-6 h-6 text-orange-600" />
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Clock className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Thời gian học (phút)</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalStudyTime}</p>
+                  <p className="text-sm font-semibold text-gray-600">Thời gian học (phút)</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{stats.totalStudyTime}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
               <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Star className="w-6 h-6 text-yellow-600" />
+                <div className="p-3 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Star className="w-6 h-6 text-white" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Đánh giá trung bình</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.averageRating}</p>
+                  <p className="text-sm font-semibold text-gray-600">Đánh giá trung bình</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">{stats.averageRating}</p>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-8 mb-8">
             <div className="text-center">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có con nào</h3>
-              <p className="text-gray-600 mb-4">Bạn cần thêm thông tin con cái để sử dụng tính năng này</p>
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-4 shadow-lg">
+                <Users className="w-10 h-10 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Chưa có con nào</h3>
+              <p className="text-gray-600 mb-6 font-medium">Bạn cần thêm thông tin con cái để sử dụng tính năng này</p>
               <button
                 onClick={handleViewProfile}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 font-semibold"
               >
                 Thêm thông tin con
               </button>
@@ -396,23 +410,31 @@ const ParentDashboard = () => {
 
         {/* Tabs */}
         {children.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 mb-6 overflow-hidden">
+          <div className="border-b border-gray-200/50 bg-gradient-to-r from-blue-50/50 via-purple-50/30 to-pink-50/30">
+            <nav className="flex space-x-2 px-6 overflow-x-auto scrollbar-hide">
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                    className={`relative py-4 px-5 border-b-2 font-bold text-sm flex items-center gap-2 transition-all duration-300 whitespace-nowrap group ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-600 hover:text-blue-600'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {tab.label}
+                    {/* Active indicator background */}
+                    {activeTab === tab.id && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-t-xl"></div>
+                    )}
+                    
+                    {/* Hover background */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-50/0 via-blue-50/0 to-purple-50/0 group-hover:from-gray-50/50 group-hover:via-blue-50/50 group-hover:to-purple-50/50 rounded-t-xl transition-all duration-300"></div>
+                    
+                    <Icon className={`w-5 h-5 relative z-10 transition-all duration-300 ${activeTab === tab.id ? 'text-blue-600 scale-110' : 'group-hover:scale-110'}`} />
+                    <span className="relative z-10">{tab.label}</span>
                   </button>
                 );
               })}
@@ -434,42 +456,47 @@ const ParentDashboard = () => {
                   <>
                     {/* Children Overview */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin con cái</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-md">
+                          <Users className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Thông tin con cái</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {children.map(child => (
-                          <div key={child.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div className="flex items-center justify-between mb-3">
+                          <div key={child.id} className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group">
+                            <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <UserCheck className="w-5 h-5 text-blue-600" />
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                                  <UserCheck className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                  <h4 className="font-medium text-gray-900">{child.name}</h4>
-                                  <p className="text-sm text-gray-600">Lớp {child.grade}</p>
+                                  <h4 className="font-bold text-gray-900 text-lg">{child.name}</h4>
+                                  <p className="text-sm text-gray-600 font-medium">Lớp {child.grade}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                                <span className="text-sm font-medium">{child.averageRating || 5}</span>
+                              <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1.5 rounded-xl shadow-md">
+                                <Star className="w-4 h-4 text-white fill-current" />
+                                <span className="text-sm font-bold text-white">{child.averageRating || 5}</span>
                               </div>
               </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div className="flex items-center gap-1">
-                                <BookOpen className="w-4 h-4 text-gray-400" />
-                                <span>{child.enrolledCourses || 0} khóa</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="flex items-center gap-2 bg-gradient-to-br from-blue-50 to-purple-50 p-3 rounded-xl border border-blue-200/50">
+                                <BookOpen className="w-4 h-4 text-blue-600" />
+                                <span className="text-sm font-semibold text-gray-700">{child.enrolledCourses || 0} khóa</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <CheckCircle className="w-4 h-4 text-gray-400" />
-                                <span>{child.completedCourses || 0} hoàn thành</span>
+                              <div className="flex items-center gap-2 bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-xl border border-green-200/50">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm font-semibold text-gray-700">{child.completedCourses || 0} hoàn thành</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-4 h-4 text-gray-400" />
-                                <span>{child.totalStudyTime || 0} phút</span>
+                              <div className="flex items-center gap-2 bg-gradient-to-br from-orange-50 to-red-50 p-3 rounded-xl border border-orange-200/50">
+                                <Clock className="w-4 h-4 text-orange-600" />
+                                <span className="text-sm font-semibold text-gray-700">{child.totalStudyTime || 0} phút</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <TrendingUp className="w-4 h-4 text-gray-400" />
-                                <span>{Math.round(((child.completedCourses || 0) / (child.enrolledCourses || 1)) * 100)}%</span>
+                              <div className="flex items-center gap-2 bg-gradient-to-br from-purple-50 to-pink-50 p-3 rounded-xl border border-purple-200/50">
+                                <TrendingUp className="w-4 h-4 text-purple-600" />
+                                <span className="text-sm font-semibold text-gray-700">{Math.round(((child.completedCourses || 0) / (child.enrolledCourses || 1)) * 100)}%</span>
                               </div>
                             </div>
                           </div>
@@ -479,49 +506,56 @@ const ParentDashboard = () => {
 
                     {/* Recent Activity */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Hoạt động gần đây</h3>
-                      <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                          <Clock className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Hoạt động gần đây</h3>
+                      </div>
+                      <div className="bg-gradient-to-br from-gray-50/80 to-blue-50/50 backdrop-blur-sm rounded-2xl p-5 border border-gray-200/50 shadow-lg">
                         {loadingActivities ? (
                           <div className="flex items-center justify-center py-8">
                             <div className="text-center">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                              <p className="text-sm text-gray-600">Đang tải hoạt động...</p>
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                              <p className="text-sm text-gray-600 font-medium">Đang tải hoạt động...</p>
                             </div>
                           </div>
                         ) : recentActivities.length > 0 ? (
                           <div className="space-y-3">
                             {recentActivities.map((activity, index) => (
-                              <div key={index} className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  activity.type === 'course_completion' ? 'bg-green-100' :
-                                  activity.type === 'lesson_start' ? 'bg-blue-100' :
-                                  activity.type === 'achievement' ? 'bg-yellow-100' :
-                                  'bg-gray-100'
+                              <div key={index} className="flex items-center gap-4 p-4 bg-white/90 backdrop-blur-sm rounded-xl border border-white/50 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${
+                                  activity.type === 'course_completion' ? 'bg-gradient-to-br from-green-500 to-emerald-500' :
+                                  activity.type === 'lesson_start' ? 'bg-gradient-to-br from-blue-500 to-cyan-500' :
+                                  activity.type === 'achievement' ? 'bg-gradient-to-br from-yellow-400 to-orange-400' :
+                                  'bg-gradient-to-br from-gray-400 to-gray-500'
                                 }`}>
                                   {activity.type === 'course_completion' ? (
-                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                    <CheckCircle className="w-6 h-6 text-white" />
                                   ) : activity.type === 'lesson_start' ? (
-                                    <PlayCircle className="w-4 h-4 text-blue-600" />
+                                    <PlayCircle className="w-6 h-6 text-white" />
                                   ) : activity.type === 'achievement' ? (
-                                    <Award className="w-4 h-4 text-yellow-600" />
+                                    <Award className="w-6 h-6 text-white" />
                                   ) : (
-                                    <Clock className="w-4 h-4 text-gray-600" />
+                                    <Clock className="w-6 h-6 text-white" />
                                   )}
                                 </div>
                                 <div className="flex-1">
-                                  <p className="text-sm font-medium text-gray-900">
+                                  <p className="text-sm font-bold text-gray-900">
                                     {activity.description}
                                   </p>
-                                  <p className="text-xs text-gray-500">{activity.timeAgo}</p>
+                                  <p className="text-xs text-gray-500 font-medium mt-1">{activity.timeAgo}</p>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="text-center py-8">
-                            <Clock className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Chưa có hoạt động</h4>
-                            <p className="text-xs text-gray-600">Con bạn chưa có hoạt động nào gần đây</p>
+                          <div className="text-center py-12">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-4 shadow-lg">
+                              <Clock className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Chưa có hoạt động</h4>
+                            <p className="text-sm text-gray-600 font-medium">Con bạn chưa có hoạt động nào gần đây</p>
                           </div>
                         )}
                       </div>
@@ -557,49 +591,49 @@ const ParentDashboard = () => {
                 ) : childCourses.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {childCourses.map(course => (
-                      <div key={course.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <div key={course.id} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group overflow-hidden">
                         <div className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{course.title}</h3>
-                              <p className="text-sm text-gray-600 mb-2">{course.description}</p>
-                              <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{course.duration} phút</span>
+                              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{course.title}</h3>
+                              <p className="text-sm text-gray-600 mb-3 font-medium">{course.description}</p>
+                              <div className="flex items-center gap-4 text-sm">
+                                <div className="flex items-center gap-1.5 bg-gradient-to-br from-blue-50 to-purple-50 px-3 py-1.5 rounded-lg border border-blue-200/50">
+                                  <Clock className="w-4 h-4 text-blue-600" />
+                                  <span className="font-semibold text-gray-700">{course.duration} phút</span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <BookOpen className="w-4 h-4" />
-                                  <span>{course.totalLessons || 0} bài học</span>
+                                <div className="flex items-center gap-1.5 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-1.5 rounded-lg border border-green-200/50">
+                                  <BookOpen className="w-4 h-4 text-green-600" />
+                                  <span className="font-semibold text-gray-700">{course.totalLessons || 0} bài học</span>
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                              <span className="text-sm font-medium">{course.averageRating || 5}</span>
+                            <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1.5 rounded-xl shadow-md">
+                              <Star className="w-4 h-4 text-white fill-current" />
+                              <span className="text-sm font-bold text-white">{course.averageRating || 5}</span>
                             </div>
                           </div>
                           
                           <div className="mb-4">
-                            <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="text-gray-600">Tiến độ</span>
-                              <span className="font-medium">{course.progress || 0}%</span>
+                            <div className="flex items-center justify-between text-sm mb-2">
+                              <span className="text-gray-600 font-semibold">Tiến độ</span>
+                              <span className="font-bold text-gray-900">{course.progress || 0}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                               <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300 shadow-md"
                                 style={{ width: `${course.progress || 0}%` }}
                               ></div>
                     </div>
                   </div>
 
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-200/50">
+                            <div className="text-sm text-gray-600 font-semibold">
                               {Array.isArray(course.completedLessons) ? course.completedLessons.length : (course.completedLessons || 0)}/{course.totalLessons || 0} bài học
                             </div>
                             <button 
                               onClick={() => handleViewCourseDetail(course.id)}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 text-sm font-semibold"
                             >
                               <Eye className="w-4 h-4" />
                       Xem chi tiết
@@ -671,29 +705,29 @@ const ParentDashboard = () => {
                 ) : childAchievements.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {childAchievements.map((achievement, index) => (
-                      <div key={index} className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                      <div key={index} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] group p-6">
                         <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                          <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                             {achievement.type === 'course_completion' ? (
-                              <Trophy className="w-6 h-6 text-white" />
+                              <Trophy className="w-7 h-7 text-white" />
                             ) : (
-                              <Medal className="w-6 h-6 text-white" />
+                              <Medal className="w-7 h-7 text-white" />
                             )}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">{achievement.title}</h3>
-                            <p className="text-sm text-gray-600">{achievement.description}</p>
+                            <h3 className="font-bold text-gray-900 text-lg mb-1">{achievement.title}</h3>
+                            <p className="text-sm text-gray-600 font-medium">{achievement.description}</p>
                 </div>
               </div>
 
-                        <div className="text-sm text-gray-500">
-                          <div className="flex items-center gap-1 mb-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(achievement.earnedAt).toLocaleDateString('vi-VN')}</span>
+                        <div className="space-y-2 pt-4 border-t border-gray-200/50">
+                          <div className="flex items-center gap-2 bg-gradient-to-br from-blue-50 to-purple-50 p-2 rounded-lg border border-blue-200/50">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-semibold text-gray-700">{new Date(achievement.earnedAt).toLocaleDateString('vi-VN')}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Target className="w-4 h-4" />
-                            <span>{achievement.courseTitle}</span>
+                          <div className="flex items-center gap-2 bg-gradient-to-br from-green-50 to-emerald-50 p-2 rounded-lg border border-green-200/50">
+                            <Target className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-semibold text-gray-700">{achievement.courseTitle}</span>
                 </div>
               </div>
             </div>

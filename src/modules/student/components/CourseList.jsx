@@ -173,18 +173,19 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Khóa học</h2>
-          <p className="text-gray-600">Khám phá và đăng ký các khóa học phù hợp</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Khóa học</h2>
+          <p className="text-gray-600 text-lg">Khám phá và đăng ký các khóa học phù hợp</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">
+        <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-xl">
+          <BookOpen className="w-5 h-5 text-blue-600" />
+          <span className="text-sm font-semibold text-blue-600">
             {filteredCourses.length} khóa học
           </span>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
@@ -195,7 +196,7 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
                 placeholder="Tìm kiếm khóa học..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
             </div>
           </div>
@@ -203,11 +204,11 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
           {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium"
           >
             <Filter className="w-4 h-4" />
             <span>Bộ lọc</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -301,7 +302,7 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course) => (
-            <div key={course.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-all duration-200 cursor-pointer"
+            <div key={course.id} className="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden group cursor-pointer"
               onClick={() => handleCourseClick(course)}
             >
               {/* Course Thumbnail */}
@@ -310,23 +311,23 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
                   <img 
                     src={course.thumbnail} 
                     alt={course.title}
-                    className="w-full h-48 object-cover rounded-t-lg"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
-                    <BookOpen className="w-16 h-16 text-white" />
+                  <div className="w-full h-48 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+                    <BookOpen className="w-20 h-20 text-white opacity-80" />
                   </div>
                 )}
                 
                 {/* Access Level Badge */}
                 <div className="absolute top-4 left-4">
                   {course.accessLevel === ACCESS_LEVELS.PREMIUM ? (
-                    <div className="flex items-center gap-1 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold">
+                    <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
                       <Crown className="w-3 h-3" />
                       <span>Premium</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 bg-green-400 text-green-900 px-2 py-1 rounded-full text-xs font-semibold">
+                    <div className="flex items-center gap-1 bg-gradient-to-r from-green-400 to-emerald-400 text-green-900 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
                       <CheckCircle className="w-3 h-3" />
                       <span>Miễn phí</span>
                     </div>
@@ -334,10 +335,10 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
                 </div>
 
                 {/* Rating */}
-                <div className="absolute top-4 right-4 bg-white bg-opacity-90 px-2 py-1 rounded-full">
+                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-sm font-medium">{course.averageRating || 5}</span>
+                    <span className="text-sm font-bold text-gray-900">{course.averageRating || 5}</span>
                   </div>
                 </div>
               </div>
@@ -345,12 +346,13 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
               {/* Course Content */}
               <div className="p-6">
                 <div className="mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
                     {course.title}
                   </h3>
-                  <p className="text-sm text-gray-600">
-                    {course.subject} - Lớp {course.grade}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-semibold">{course.subject}</span>
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-semibold">Lớp {course.grade}</span>
+                  </div>
                 </div>
 
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">
@@ -358,21 +360,21 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
                 </p>
                 
                 {/* Course Stats */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
+                <div className="space-y-2 mb-4 p-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
                       <Clock className="w-4 h-4" />
-                      <span>{course.duration} phút</span>
+                      <span className="font-medium">{course.duration} phút</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 text-gray-600">
                       <Users className="w-4 h-4" />
-                      <span>{course.enrolledStudents || 0} học sinh</span>
+                      <span className="font-medium">{course.enrolledStudents || 0} học sinh</span>
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Độ khó:</span>
-                    <span className="font-medium">
+                  <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
+                    <span className="text-gray-600 font-medium">Độ khó:</span>
+                    <span className="font-bold text-gray-900">
                       {Object.values(DIFFICULTY_LEVELS).find(d => d.id === course.difficulty)?.name || course.difficulty}
                     </span>
                   </div>
@@ -385,9 +387,9 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
                     handleEnrollCourse(course);
                   }}
                   disabled={!canAccessCourse(course) || enrollingCourseId === course.id}
-                  className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition ${
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-200 font-semibold ${
                     canAccessCourse(course) && enrollingCourseId !== course.id
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
@@ -398,12 +400,12 @@ const CourseList = ({ userRole, subscriptionType, userId, onEnrollCourse }) => {
                     </>
                   ) : canAccessCourse(course) ? (
                     <>
-                      <Play className="w-4 h-4" />
+                      <Play className="w-5 h-5" />
                       <span>{enrolledCourses.includes(course.id) ? 'Tiếp tục học' : 'Bắt đầu học'}</span>
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4" />
+                      <Lock className="w-5 h-5" />
                       <span>Cần Premium</span>
                     </>
                   )}

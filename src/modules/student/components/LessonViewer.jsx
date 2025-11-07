@@ -191,71 +191,88 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 flex relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+      
       {/* Sidebar - Lesson Parts */}
-      <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
-        <div className="p-4">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+      <div className="relative w-80 bg-white/80 backdrop-blur-xl border-r border-white/30 shadow-xl overflow-y-auto z-10">
+        <div className="p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-black text-gray-900 mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {lesson.title}
             </h2>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>{lesson.duration} phút</span>
+            <div className="flex items-center gap-4 text-sm mb-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="font-semibold text-gray-700">{lesson.duration} phút</span>
               </div>
-              <div className="flex items-center gap-1">
-                <FileText className="w-4 h-4" />
-                <span>{lesson.parts?.length || 0} phần</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg">
+                <FileText className="w-4 h-4 text-purple-600" />
+                <span className="font-semibold text-gray-700">{lesson.parts?.length || 0} phần</span>
               </div>
             </div>
             
             {/* Progress Indicator */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <div className="mt-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="flex items-center justify-between text-sm font-bold text-gray-700 mb-3">
                 <span>Tiến độ hoàn thành</span>
-                <span className="text-green-600 font-medium">
+                <span className="text-green-600">
                   {completedParts.size}/{lesson.parts?.length || 0} phần
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200/80 rounded-full h-3 shadow-inner">
                 <div 
-                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full transition-all duration-500 shadow-lg relative overflow-hidden"
                   style={{ width: `${lesson.parts?.length ? (completedParts.size / lesson.parts.length) * 100 : 0}%` }}
-                ></div>
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Parts List */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {lesson.parts?.map((part, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg">
+              <div key={index} className="relative border border-gray-200/50 rounded-xl overflow-hidden group">
                 <button
                   onClick={() => {
                     goToPart(index);
                     toggleSection(index);
                     setActiveTab('content');
                   }}
-                  className={`w-full text-left p-3 rounded-lg transition ${
+                  className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
                     index === currentPartIndex && activeTab === 'content'
-                      ? 'bg-blue-50 border-blue-200'
-                      : 'hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border-2 border-blue-300 shadow-lg'
+                      : 'bg-white/50 hover:bg-gradient-to-r hover:from-blue-50/50 hover:via-purple-50/50 hover:to-pink-50/50 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {completedParts.has(index) ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-gray-400" />
-                      )}
-                      <span className="font-medium text-sm">{part.title}</span>
+                    <div className="flex items-center gap-3">
+                      <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
+                        completedParts.has(index)
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                          : 'bg-gradient-to-br from-gray-300 to-gray-400'
+                      }`}>
+                        {completedParts.has(index) ? (
+                          <CheckCircle className="w-5 h-5 text-white" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-white" />
+                        )}
+                        {completedParts.has(index) && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                        )}
+                      </div>
+                      <span className="font-bold text-sm text-gray-900">{part.title}</span>
                     </div>
                     {expandedSections.has(index) ? (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                 </button>
@@ -264,18 +281,20 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
             
             {/* Tài liệu đính kèm Tab */}
             {(lesson.attachments?.files?.length > 0 || lesson.attachments?.images?.length > 0) && (
-              <div className="border border-gray-200 rounded-lg">
+              <div className="relative border border-gray-200/50 rounded-xl overflow-hidden group">
                 <button
                   onClick={() => setActiveTab('attachments')}
-                  className={`w-full text-left p-3 rounded-lg transition ${
+                  className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
                     activeTab === 'attachments'
-                      ? 'bg-blue-50 border-blue-200'
-                      : 'hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border-2 border-blue-300 shadow-lg'
+                      : 'bg-white/50 hover:bg-gradient-to-r hover:from-blue-50/50 hover:via-purple-50/50 hover:to-pink-50/50 hover:shadow-md'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium text-sm">Tài liệu đính kèm</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="font-bold text-sm text-gray-900">Tài liệu đính kèm</span>
                   </div>
                 </button>
               </div>
@@ -283,46 +302,48 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
           </div>
 
           {/* Lesson Actions */}
-          <div className="mt-6 space-y-2">
+          <div className="mt-6 space-y-3">
             <button
               onClick={prevPart}
               disabled={currentPartIndex === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="relative w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg font-bold overflow-hidden group/btn"
             >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-              Phần trước
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+              <ChevronRight className="w-5 h-5 rotate-180 relative z-10" />
+              <span className="relative z-10">Phần trước</span>
             </button>
             
             <button
               onClick={nextPart}
               disabled={currentPartIndex === lesson.parts.length - 1}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="relative w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg font-bold overflow-hidden group/btn"
             >
-              Phần tiếp theo
-              <ChevronRight className="w-4 h-4" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+              <span className="relative z-10">Phần tiếp theo</span>
+              <ChevronRight className="w-5 h-5 relative z-10" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="relative flex-1 flex flex-col z-10">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border-b border-white/30 shadow-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={onExit}
-                className="text-gray-600 hover:text-gray-900 transition"
+                className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:scale-110"
                 title="Thoát khỏi bài học"
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-6 h-6 text-gray-700" />
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-xl font-black text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {currentPart?.title}
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 font-semibold">
                   Phần {currentPartIndex + 1} / {lesson.parts.length}
                 </p>
               </div>
@@ -330,9 +351,9 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
             
             <div className="flex items-center gap-2">
               {isCompleted && (
-                <div className="flex items-center gap-1 text-green-600">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="text-sm font-medium">Đã hoàn thành</span>
+                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-md">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-bold text-green-700">Đã hoàn thành</span>
                 </div>
               )}
             </div>
@@ -347,11 +368,14 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
               <>
                 {/* Video của phần hiện tại */}
                 {currentPart.videoUrl && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 overflow-hidden group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                    
+                    <h3 className="relative text-xl font-black text-gray-900 mb-4 flex items-center gap-3">
+                      <div className="w-2 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
                       Video: {currentPart.title}
                     </h3>
-                    <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg">
                       <iframe
                         src={getYouTubeEmbedUrl(currentPart.videoUrl)}
                         title={currentPart.title}
@@ -363,12 +387,15 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
                 )}
 
                 {/* Nội dung text của phần */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 overflow-hidden group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                  
+                  <h3 className="relative text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                    <div className="w-2 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
                     {currentPart.title}
                   </h3>
                   <div 
-                    className="prose max-w-none"
+                    className="relative prose max-w-none prose-headings:font-black prose-p:text-gray-700 prose-strong:text-gray-900"
                     dangerouslySetInnerHTML={{ __html: currentPart.content }}
                   />
                 </div>
@@ -380,37 +407,44 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
               <div className="space-y-6">
                 {/* Files */}
                 {lesson.attachments?.files?.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 overflow-hidden group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                    
+                    <h3 className="relative text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                      <div className="w-2 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
                       Tài liệu đính kèm
                     </h3>
-                    <div className="space-y-3">
+                    <div className="relative space-y-3">
                       {lesson.attachments.files.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-gray-500" />
+                        <div key={index} className="relative flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-blue-50/30 rounded-xl border border-gray-200/50 hover:shadow-lg transition-all duration-300 group/item overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 to-purple-50/0 group-hover/item:from-blue-50/30 group-hover/item:to-purple-50/30 transition-all duration-500"></div>
+                          
+                          <div className="relative flex items-center gap-4 z-10">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                              <FileText className="w-6 h-6 text-white" />
+                            </div>
                             <div>
-                              <p className="font-medium text-gray-900">{file.name}</p>
-                              <p className="text-sm text-gray-600">
+                              <p className="font-bold text-gray-900">{file.name}</p>
+                              <p className="text-sm text-gray-600 font-medium">
                                 {(file.size / 1024 / 1024).toFixed(2)} MB
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="relative flex items-center gap-3 z-10">
                             <a
                               href={file.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800"
+                              className="p-2 bg-blue-50 rounded-lg text-blue-600 hover:bg-blue-100 transition-all duration-200 hover:scale-110"
                             >
-                              <ExternalLink className="w-4 h-4" />
+                              <ExternalLink className="w-5 h-5" />
                             </a>
                             <a
                               href={file.url}
                               download={file.name}
-                              className="text-gray-600 hover:text-gray-800"
+                              className="p-2 bg-purple-50 rounded-lg text-purple-600 hover:bg-purple-100 transition-all duration-200 hover:scale-110"
                             >
-                              <Download className="w-4 h-4" />
+                              <Download className="w-5 h-5" />
                             </a>
                           </div>
                         </div>
@@ -421,22 +455,30 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
 
                 {/* Images */}
                 {lesson.attachments?.images?.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 overflow-hidden group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500"></div>
+                    
+                    <h3 className="relative text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                      <div className="w-2 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
                       Hình ảnh minh họa
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4">
                       {lesson.attachments.images.map((image, index) => (
-                        <div key={index} className="relative group">
+                        <div key={index} className="relative group overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                           <img
                             src={image.url}
                             alt={image.name}
-                            className="w-full h-48 object-cover rounded-lg"
+                            className="w-full h-48 object-cover"
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
-                            <button className="opacity-0 group-hover:opacity-100 bg-white bg-opacity-90 rounded-full p-2 transition-all duration-200">
-                              <ExternalLink className="w-4 h-4 text-gray-700" />
-                            </button>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <a
+                              href={image.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-white/90 backdrop-blur-sm rounded-full p-3 hover:scale-110 transition-transform duration-200"
+                            >
+                              <ExternalLink className="w-6 h-6 text-gray-700" />
+                            </a>
                           </div>
                         </div>
                       ))}
@@ -446,9 +488,11 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
 
                 {/* No attachments message */}
                 {(!lesson.attachments?.files?.length && !lesson.attachments?.images?.length) && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Không có tài liệu đính kèm</p>
+                  <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-12 text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="w-12 h-12 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600 font-medium">Không có tài liệu đính kèm</p>
                   </div>
                 )}
               </div>
@@ -457,25 +501,27 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-white border-t border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border-t border-white/30 shadow-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={prevPart}
                 disabled={currentPartIndex === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="relative flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg font-bold overflow-hidden group/btn"
               >
-                <ChevronRight className="w-4 h-4 rotate-180" />
-                Phần trước
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                <ChevronRight className="w-5 h-5 rotate-180 relative z-10" />
+                <span className="relative z-10">Phần trước</span>
               </button>
               
               <button
                 onClick={nextPart}
                 disabled={currentPartIndex === lesson.parts.length - 1}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="relative flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg font-bold overflow-hidden group/btn"
               >
-                Phần tiếp theo
-                <ChevronRight className="w-4 h-4" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                <span className="relative z-10">Phần tiếp theo</span>
+                <ChevronRight className="w-5 h-5 relative z-10" />
               </button>
             </div>
 
@@ -484,10 +530,11 @@ const LessonViewer = ({ lesson, courseId, onComplete, onNext, onPrev, onExit, is
                 <button
                   onClick={() => markPartCompleted(currentPartIndex)}
                   disabled={completedParts.has(currentPartIndex) || isCompleted}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+                  className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 font-bold overflow-hidden group/btn"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  {completedParts.has(currentPartIndex) ? 'Đã hoàn thành phần này' : 'Hoàn thành phần này'}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                  <CheckCircle className="w-5 h-5 relative z-10" />
+                  <span className="relative z-10">{completedParts.has(currentPartIndex) ? 'Đã hoàn thành phần này' : 'Hoàn thành phần này'}</span>
                 </button>
               )}
             </div>
