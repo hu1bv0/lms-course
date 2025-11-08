@@ -26,6 +26,10 @@ import {
   HeadsetIcon,
   CheckCircle2,
   Sparkles,
+  BarChart3,
+  Shield,
+  Rocket,
+  Globe,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -167,94 +171,145 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/50 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-pink-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">
+            <h3 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
               Tính năng Nổi bật
             </h3>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-600 font-medium">
               Khám phá những tính năng mạnh mẽ giúp Learnly trở thành nền tảng
               học tập thông minh hàng đầu
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-8 h-8 text-blue-600" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* AI Thông minh */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/50 to-cyan-400/50 rounded-2xl blur-xl"></div>
+                  <Brain className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-3">AI Thông minh</h4>
-                <p className="text-gray-600">
+                <h4 className="text-xl font-bold mb-3 text-gray-900">AI Thông minh</h4>
+                <p className="text-gray-600 font-medium">
                   Hệ thống AI thông minh giúp cá nhân hóa trải nghiệm học tập
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Target className="w-8 h-8 text-green-600" />
+            {/* Trò chuyện Tự nhiên */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-400/50 to-emerald-400/50 rounded-2xl blur-xl"></div>
+                  <MessageCircle className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-3">Tăng hiệu tốc</h4>
-                <p className="text-gray-600">
-                  Phương pháp học tập tối ưu giúp tăng hiệu quả gấp 3 lần
+                <h4 className="text-xl font-bold mb-3 text-gray-900">Trò chuyện Tự nhiên</h4>
+                <p className="text-gray-600 font-medium">
+                  Tương tác tự nhiên với AI như đang nói chuyện với bạn bè
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-purple-600" />
+            {/* Theo dõi Tiến độ */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-rose-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400/50 to-pink-400/50 rounded-2xl blur-xl"></div>
+                  <BarChart3 className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-3">Học cùng Chí</h4>
-                <p className="text-gray-600">
+                <h4 className="text-xl font-bold mb-3 text-gray-900">Theo dõi Tiến độ</h4>
+                <p className="text-gray-600 font-medium">
+                  Theo dõi chi tiết tiến độ học tập và cải thiện liên tục
+                </p>
+              </div>
+            </div>
+
+            {/* Học 24/7 */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-amber-500/10 to-yellow-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-400/50 to-amber-400/50 rounded-2xl blur-xl"></div>
+                  <Clock className="w-10 h-10 text-white relative z-10" />
+                </div>
+                <h4 className="text-xl font-bold mb-3 text-gray-900">Học 24/7</h4>
+                <p className="text-gray-600 font-medium">
+                  Học tập mọi lúc mọi nơi, không giới hạn thời gian
+                </p>
+              </div>
+            </div>
+
+            {/* Cộng đồng Học tập */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-rose-500/10 to-red-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 to-rose-400/50 rounded-2xl blur-xl"></div>
+                  <Users className="w-10 h-10 text-white relative z-10" />
+                </div>
+                <h4 className="text-xl font-bold mb-3 text-gray-900">Cộng đồng Học tập</h4>
+                <p className="text-gray-600 font-medium">
                   Kết nối và học tập cùng hàng triệu học viên trên toàn quốc
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-orange-600" />
+            {/* An toàn & Bảo mật */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-pink-500/10 to-rose-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-400/50 to-pink-400/50 rounded-2xl blur-xl"></div>
+                  <Shield className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-3">
-                  Luyện đồng thọ nạp
-                </h4>
-                <p className="text-gray-600">
-                  Luyện tập liên tục với các bài tập đa dạng và thú vị
+                <h4 className="text-xl font-bold mb-3 text-gray-900">An toàn & Bảo mật</h4>
+                <p className="text-gray-600 font-medium">
+                  Bảo vệ thông tin cá nhân với công nghệ mã hóa tiên tiến
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Award className="w-8 h-8 text-red-600" />
+            {/* Học nhanh Hiệu quả */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-red-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/50 to-orange-400/50 rounded-2xl blur-xl"></div>
+                  <Rocket className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-3">
-                  Có chứng chi hinh đây
-                </h4>
-                <p className="text-gray-600">
-                  Nhận chứng chỉ được công nhận sau khi hoàn thành khóa học
+                <h4 className="text-xl font-bold mb-3 text-gray-900">Học nhanh Hiệu quả</h4>
+                <p className="text-gray-600 font-medium">
+                  Phương pháp học tập tối ưu giúp tăng hiệu quả gấp 3 lần
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-8 h-8 text-indigo-600" />
+            {/* Đa dạng Môn học */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/50 to-purple-400/50 rounded-2xl blur-xl"></div>
+                  <Globe className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-3">Đồ sáng thời Chỉ</h4>
-                <p className="text-gray-600">
-                  Công nghệ học tập tiên tiến nhất với trải nghiệm tuyệt vời
+                <h4 className="text-xl font-bold mb-3 text-gray-900">Đa dạng Môn học</h4>
+                <p className="text-gray-600 font-medium">
+                  Hàng nghìn khóa học đa dạng từ cơ bản đến nâng cao
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -264,7 +319,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">
-              Được Tin tương bởi hơn của CA nước
+              Được tin tưởng bởi Học Sinh của Cả Nước
             </h3>
             <p className="text-lg text-gray-600">
               Kết quả thực tế từ những học sinh thực sự đã thay đổi trải nghiệm
@@ -316,57 +371,75 @@ export default function Landing() {
       <WhychooseUs />
 
       {/* Learning Methods Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/50 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">
+            <p className="text-lg font-semibold text-blue-600 mb-2">Học tập dễ dàng hơn</p>
+            <h3 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
               Học tập Với đã CA phân Nói
             </h3>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center p-8">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Video className="w-10 h-10 text-blue-600" />
+            {/* Video bài học */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-8 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/50 to-cyan-400/50 rounded-2xl blur-xl"></div>
+                  <Video className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-4">Video bài học</h4>
-                <p className="text-gray-600">
+                <h4 className="text-xl font-bold mb-4 text-gray-900">Video bài học</h4>
+                <p className="text-gray-600 font-medium">
                   Học qua video chất lượng cao với giảng viên chuyên nghiệp
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-8">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Headphones className="w-10 h-10 text-green-600" />
+            {/* Lý thuyết ôn đọc */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-8 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-400/50 to-emerald-400/50 rounded-2xl blur-xl"></div>
+                  <Headphones className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-4">Lý thuyết ôn đọc</h4>
-                <p className="text-gray-600">
+                <h4 className="text-xl font-bold mb-4 text-gray-900">Lý thuyết ôn đọc</h4>
+                <p className="text-gray-600 font-medium">
                   Tài liệu lý thuyết phong phú và dễ hiểu
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="text-center p-8">
-              <CardContent className="pt-6">
-                <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <MessageCircle className="w-10 h-10 text-purple-600" />
+            {/* Phản hồi nhanh chóng */}
+            <div className="group relative bg-white/80 backdrop-blur-xl rounded-2xl p-8 border-2 border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400/50 to-pink-400/50 rounded-2xl blur-xl"></div>
+                  <MessageCircle className="w-10 h-10 text-white relative z-10" />
                 </div>
-                <h4 className="text-xl font-semibold mb-4">
-                  Phản hồi tô mời thầy hệt
+                <h4 className="text-xl font-bold mb-4 text-gray-900">
+                  Phản hồi nhanh chóng
                 </h4>
-                <p className="text-gray-600">
+                <p className="text-gray-600 font-medium">
                   Hỗ trợ và phản hồi nhanh chóng từ đội ngũ giảng viên
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-lg text-gray-600 mb-6">Bạn đã sẵn sàng để</p>
-            <h4 className="text-2xl font-bold text-gray-900">Bắt Đầng Học</h4>
+            <p className="text-lg text-gray-600 mb-6 font-medium">Bạn đã sẵn sàng để</p>
+            <button className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-xl font-bold">
+              Bắt đầu học
+            </button>
           </div>
         </div>
       </section>
@@ -376,7 +449,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">
-              Học sinh & Phụ huynh nói gì về Learnify
+              Học sinh & Phụ huynh nói gì về Learnly
             </h3>
             <p className="text-lg text-gray-600">
               Hàng nghìn học sinh và gia đình đã tin tưởng và đạt được kết quả
@@ -406,7 +479,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  &quot;Learnify đã giúp tôi cải thiện đáng kể kết quả học tập.
+                  &quot;Learnly đã giúp tôi cải thiện đáng kể kết quả học tập.
                   Giao diện dễ sử dụng và nội dung chất lượng cao.&quot;
                 </p>
               </CardContent>
@@ -433,7 +506,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  &quot;Con tôi rất thích học trên Learnify. Nền tảng này thực
+                  &quot;Con tôi rất thích học trên Learnly. Nền tảng này thực
                   sự hiệu quả và phù hợp với trẻ em.&quot;
                 </p>
               </CardContent>
@@ -460,7 +533,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  &quot;Tôi đã hoàn thành 5 khóa học trên Learnify và đều rất
+                  &quot;Tôi đã hoàn thành 5 khóa học trên Learnly và đều rất
                   hài lòng với chất lượng giảng dạy.&quot;
                 </p>
               </CardContent>
@@ -489,7 +562,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <p className="text-gray-600">
-                  &quot;Learnify giúp tôi học thêm nhiều kỹ năng mới cho công
+                  &quot;Learnly giúp tôi học thêm nhiều kỹ năng mới cho công
                   việc. Rất đáng để đầu tư thời gian.&quot;
                 </p>
               </CardContent>
