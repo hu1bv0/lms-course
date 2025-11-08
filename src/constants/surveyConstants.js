@@ -9,13 +9,12 @@ export const getSurveyQuestions = () => [
     id: 'grade_level',
     question: 'Bạn đang học lớp nào?',
     type: 'radio',
-    options: getAllGrades().map(grade => ({
-      value: `grade_${grade.gradeNumber}`,
-      label: grade.grade
-    })).concat([
-      { value: 'university', label: 'Đại học' },
-      { value: 'other', label: 'Khác' }
-    ])
+    options: getAllGrades()
+      .filter(grade => grade.gradeNumber >= 6 && grade.gradeNumber <= 9)
+      .map(grade => ({
+        value: `grade_${grade.gradeNumber}`,
+        label: grade.grade
+      }))
   },
   {
     id: 'subject_focus',
