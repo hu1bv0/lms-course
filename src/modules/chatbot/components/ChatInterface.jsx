@@ -334,24 +334,31 @@ const ChatInterface = () => {
 
   if (isLoadingSessions) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải chat...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold text-lg">Đang tải chat...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-blue-50 via-purple-50/30 to-pink-50/50 flex overflow-hidden relative">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-pink-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+
       {/* Sidebar - Chat Sessions */}
-      <div className="w-80 max-w-sm bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+      <div className="w-80 max-w-sm bg-white/80 backdrop-blur-xl border-r border-white/20 flex flex-col flex-shrink-0 shadow-xl relative z-10">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50/50 via-purple-50/30 to-pink-50/30">
           <button
             onClick={createNewChat}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
           >
             <Plus className="w-5 h-5" />
             Cuộc trò chuyện mới
@@ -359,12 +366,14 @@ const ChatInterface = () => {
         </div>
 
         {/* Chat Sessions List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-2">
           {chatSessions.map((chat) => (
             <div
               key={chat.id}
-              className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                currentChatId === chat.id ? 'bg-blue-50 border-blue-200' : ''
+              className={`p-4 mb-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                currentChatId === chat.id 
+                  ? 'bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 border-2 border-blue-500/50 shadow-lg' 
+                  : 'bg-white/50 hover:bg-white/80 border-2 border-transparent hover:border-gray-200/50'
               }`}
               onClick={() => setCurrentChatId(chat.id)}
             >
@@ -376,7 +385,7 @@ const ChatInterface = () => {
                         type="text"
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 text-sm border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/80 backdrop-blur-sm font-medium"
                         autoFocus
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') saveTitle(chat.id);
@@ -385,26 +394,36 @@ const ChatInterface = () => {
                       />
                       <button
                         onClick={() => saveTitle(chat.id)}
-                        className="p-1 text-green-600 hover:text-green-700"
+                        className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-300 hover:scale-110"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                       <button
                         onClick={cancelEditingTitle}
-                        className="p-1 text-red-600 hover:text-red-700"
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-300 hover:scale-110"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        currentChatId === chat.id 
+                          ? 'bg-gradient-to-br from-blue-500 to-purple-500' 
+                          : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                      }`}>
+                        <MessageSquare className="w-4 h-4 text-white" />
+                      </div>
+                      <h3 className={`text-sm font-bold truncate ${
+                        currentChatId === chat.id ? 'text-gray-900' : 'text-gray-700'
+                      }`}>
                         {chat.title}
                       </h3>
                     </div>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`text-xs mt-1 font-medium ${
+                    currentChatId === chat.id ? 'text-gray-600' : 'text-gray-500'
+                  }`}>
                     {chat.messageCount} tin nhắn
                   </p>
                 </div>
@@ -415,7 +434,7 @@ const ChatInterface = () => {
                       e.stopPropagation();
                       startEditingTitle(chat.id, chat.title);
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600"
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 hover:scale-110"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
@@ -424,7 +443,7 @@ const ChatInterface = () => {
                       e.stopPropagation();
                       deleteChat(chat.id);
                     }}
-                    className="p-1 text-gray-400 hover:text-red-600"
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-300 hover:scale-110"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -438,24 +457,29 @@ const ChatInterface = () => {
       {/* Main Chat Area */}
       <div className="flex-1 relative">
         {/* Chat Header */}
-        <div className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200 p-4 z-10">
+        <div className="absolute top-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-b border-white/20 p-4 z-10 shadow-lg shadow-blue-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(ENDPOINTS.STUDENT.DASHBOARD)}
-                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300 hover:scale-105 font-semibold shadow-md hover:shadow-lg"
                 title="Quay về Dashboard"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span className="text-sm font-medium">Dashboard</span>
+                <span className="text-sm">Dashboard</span>
               </button>
               <div className="h-6 w-px bg-gray-300"></div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                {currentChatId 
-                  ? chatSessions.find(chat => chat.id === currentChatId)?.title || 'Chat'
-                  : 'Novastep AI'
-                }
-              </h2>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  {currentChatId 
+                    ? chatSessions.find(chat => chat.id === currentChatId)?.title || 'Chat'
+                    : 'Novastep AI'
+                  }
+                </h2>
+              </div>
             </div>
           </div>
         </div>
@@ -474,21 +498,23 @@ const ChatInterface = () => {
         >
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center py-12">
-                <Bot className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <div className="text-center py-12 px-4">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                  <Bot className="w-12 h-12 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
                   Chào mừng đến với Novastep!
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 mb-4 font-medium text-lg">
                   Tôi sẽ giúp bạn học tập bằng phương pháp Socrates. 
                 </p>
-                <p className="text-sm text-gray-500">
-                  Nhập câu hỏi và nhấn <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Enter</kbd> để bắt đầu trò chuyện!
+                <p className="text-sm text-gray-500 font-medium">
+                  Nhập câu hỏi và nhấn <kbd className="px-3 py-1.5 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg text-xs font-bold shadow-md border border-blue-200">Enter</kbd> để bắt đầu trò chuyện!
                 </p>
               </div>
             </div>
           ) : (
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-6">
               {messages.map((message) => (
               <div
                 key={message.id}
@@ -497,24 +523,24 @@ const ChatInterface = () => {
                 }`}
               >
                 {message.role === 'assistant' && (
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
                     <Bot className="w-5 h-5 text-white" />
                   </div>
                 )}
                 
                 <div
-                  className={`max-w-3xl px-4 py-3 rounded-lg ${
+                  className={`max-w-3xl px-5 py-4 rounded-2xl shadow-lg ${
                     message.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-200'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                      : 'bg-white/80 backdrop-blur-sm border-2 border-gray-200/50'
                   }`}
                 >
                   {message.role === 'assistant' ? (
                     <MarkdownMessage content={message.content} />
                   ) : (
-                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    <div className="whitespace-pre-wrap font-medium">{message.content}</div>
                   )}
-                  <div className={`text-xs mt-2 ${
+                  <div className={`text-xs mt-3 font-semibold ${
                     message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                   }`}>
                     {new Date(message.timestamp).toLocaleTimeString('vi-VN')}
@@ -522,7 +548,7 @@ const ChatInterface = () => {
                 </div>
 
                 {message.role === 'user' && (
-                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
                     <User className="w-5 h-5 text-white" />
                   </div>
                 )}
@@ -534,36 +560,36 @@ const ChatInterface = () => {
           {isLoading && (
             <div className="p-4">
               <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="text-gray-600">Novastep đang suy nghĩ...</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <Bot className="w-5 h-5 text-white" />
                 </div>
-              </div>
+                <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-200/50 px-5 py-4 rounded-2xl shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-700 font-semibold">Novastep đang suy nghĩ...</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Input Area */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-white/20 p-4 shadow-lg shadow-blue-500/10">
           <div className="flex gap-3">
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Nhập câu hỏi và nhấn Enter để gửi..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="flex-1 px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 font-medium"
               rows={1}
               disabled={isLoading}
             />
             <button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-5 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 disabled:hover:scale-100"
               title="Gửi tin nhắn"
             >
               <Send className="w-5 h-5" />
